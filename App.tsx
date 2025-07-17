@@ -6,16 +6,17 @@
  */
 
 import { NewAppScreen } from '@react-native/new-app-screen';
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import AppNavigator from './src/screen/Navigator/AppNavigator';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <NewAppScreen templateFileName="App.tsx" />
-    </View>
+   <NavigationContainer>
+      <AppNavigator />
+    </NavigationContainer>
   );
 }
 
