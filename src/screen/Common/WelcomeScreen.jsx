@@ -6,10 +6,10 @@ import {
     ImageBackground,
     StyleSheet,
     Image,
-    
-   
-   
-    
+
+
+
+
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
@@ -18,6 +18,13 @@ const WelcomeScreen = () => {
     const navigation = useNavigation()
 
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            navigation.replace('LoginScreen'); // Replace splash with home
+        }, 2000); // 2 seconds = 2000 milliseconds
+
+        return () => clearTimeout(timer); // Cleanup
+    }, []);
 
 
 
@@ -29,10 +36,10 @@ const WelcomeScreen = () => {
                 style={styles.topImage}
                 resizeMode="cover"
             >
-                <View style={{alignItems:'center',marginTop:240}}>
-                    <Image source={require('../../asset/loader.gif')} style={styles.loaderImage}/>
+                <View style={{ alignItems: 'center', marginTop: 240 }}>
+                    <Image source={require('../../asset/loader.gif')} style={styles.loaderImage} />
                 </View>
-              
+
             </ImageBackground>
 
 
@@ -52,7 +59,7 @@ const styles = StyleSheet.create({
         width: 200,
 
     },
-    
+
 
 });
 
