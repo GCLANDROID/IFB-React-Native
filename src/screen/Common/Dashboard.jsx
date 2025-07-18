@@ -38,7 +38,7 @@ const Dashboard = () => {
                         <Text style={styles.nameText}>Surindar Sing Chouhan</Text>
                     </View>
                     <View style={styles.container}>
-                        <TouchableOpacity style={styles.card}>
+                        <TouchableOpacity style={styles.card}  onPress={() => navigation.navigate('AttendanceDashboard')}>
                             <Image source={require('../../asset/calendar.png')} style={styles.menuICon}></Image>
                             <Text style={styles.menuTextText}>Attendance</Text>
                         </TouchableOpacity>
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     },
     menuICon: {
         width: 70,
-        width: 70
+        height: 70
     },
     card: {
         height: 150,
