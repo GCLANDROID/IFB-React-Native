@@ -59,7 +59,7 @@ const LoginScreen = () => {
                         </View>
                         <TextInput style={styles.inputText} placeholder='Enter Security Code' placeholderTextColor={'#665c5cff'}></TextInput>
                      </View>
-                     <TouchableOpacity style={styles.loginButton}  onPress={() => navigation.navigate('Dashboard')}>
+                     <TouchableOpacity style={styles.loginButton}  onPress={() => navigation.navigate('AttendanceDashboard')}>
                         <Text style={styles.loginButtonText}>Login</Text>
                         <Image source={require('../../asset/send.png')} style={[styles.icon,{marginLeft:10}]}></Image>
                      </TouchableOpacity>

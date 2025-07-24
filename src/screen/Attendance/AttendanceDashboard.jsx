@@ -38,14 +38,7 @@ const AttendanceDashboard = () => {
                     resizeMode="cover"
                 >
                     <ScrollView style={{ flex: 1 }}>
-                        <View style={styles.header}>
-                            <TouchableOpacity >
-                                <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon}></Image>
-                            </TouchableOpacity>
-                            <TouchableOpacity >
-                                <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon}></Image>
-                            </TouchableOpacity>
-                        </View>
+                     
                         <View style={{ flex: 1, justifyContent: 'center', padding: 20,alignContent:'center',marginTop:110 }}>
                             <View style={{ flexDirection: 'row',alignSelf:'center' }}>
                                 <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('AttendanceManage')}>

@@ -1,23 +1,128 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, PermissionsAndroid, Alert, Modal } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
+import Geocoder from 'react-native-geocoding';
+import Geolocation from '@react-native-community/geolocation';
+import { launchCamera } from 'react-native-image-picker';
+
+Geocoder.init('AIzaSyBuxUn1s4S2yv8fqwd0wGUTFegxNyASL1g');
 
 
 const AttendanceManage = () => {
-  const location = {
-    latitude: 22.5769,  // Mother's Wax Museum location
-    longitude: 88.4347,
-    latitudeDelta: 0.005,
-    longitudeDelta: 0.005,
+  const [location, setLocation] = useState(null);
+  const [address, setAddress] = useState('Fetching address......');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'Camera Permission',
+            message: 'This app needs access to your camera to take attendance pictures.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
   };
+  const openCamera = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      Alert.alert('Permission Denied', 'Camera permission is required to take a photo.');
+      return;
+    }
+
+    launchCamera(
+      {
+        mediaType: 'photo',
+        cameraType: 'back',
+        saveToPhotos: true,
+      },
+      (response) => {
+        if (response.didCancel) return;
+        if (response.errorCode) {
+          console.log('Camera error:', response.errorMessage);
+        } else {
+          const source = { uri: response.assets[0].uri };
+          setCapturedImage(source);
+        }
+      }
+    );
+  };
+
+  useEffect(() => {
+    const getLocation = async () => {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
+
+      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+        Alert.alert('Permission denied');
+        return;
+      }
+
+      Geolocation.getCurrentPosition(
+        (position) => {
+          console.log('✅ Got location:', position);
+          const { latitude, longitude } = position.coords;
+          setLocation({
+            latitude,
+            longitude,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          });
+          Geocoder.from(latitude, longitude)
+            .then(json => {
+              if (json.results.length > 0) {
+                const address = json.results[0].formatted_address;
+                console.log('📍 Address:', address);
+                setAddress(address); // setAddress should be a useState hook
+              } else {
+                setAddress('Address not found');
+              }
+            })
+            .catch(error => {
+              console.warn('❌ Geocoding error:', error);
+              setAddress('Unable to get address');
+            });
+        },
+
+        (error) => {
+          console.warn('❌ Error getting location:', error);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 10000,
+        }
+      );
+    };
+
+    getLocation();
+  }, []);
+
+
+
 
   return (
     <View style={styles.container}>
       {/* Map View */}
       <View style={{ flex: 2 }}>
-        <MapView style={styles.map} initialRegion={location}>
-          <Marker coordinate={location} title="Mother's Wax Museum" />
-        </MapView>
+        {location && (
+          <MapView style={styles.map} region={location}>
+            <Marker coordinate={location} title="Your Location" />
+          </MapView>
+        )}
 
       </View>
 
@@ -25,20 +130,20 @@ const AttendanceManage = () => {
       <View style={styles.bottomContainer}>
         {/* Location Details */}
         <Text style={styles.locationTitleText}>
-           Location
-          </Text>
+          Location
+        </Text>
         <View style={styles.locationRow}>
           <Image
             source={require('../../asset/placeholder.gif')} // Replace with your fingerprint icon
             style={styles.marker}
           />
           <Text style={styles.locationText}>
-            HFXC+RVJ, Kadampukur Village, Newtown, New Town, Ghuni, West Bengal 700156
+            {address}
           </Text>
         </View>
 
         {/* Fingerprint + Attendance Text */}
-        <TouchableOpacity style={styles.fingerprintContainer}>
+        <TouchableOpacity style={styles.fingerprintContainer} onPress={() => setModalVisible(true)}>
           <Image
             source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
             style={styles.fingerprint}
@@ -51,12 +156,57 @@ const AttendanceManage = () => {
           <Text style={styles.reportText}>Attendance Report</Text>
           <View style={styles.backArrowbg}>
             <Image
-            source={require('../../asset/back-arrow.png')} // Replace with your fingerprint icon
-            style={styles.backArrow}
-          />
+              source={require('../../asset/back-arrow.png')} // Replace with your fingerprint icon
+              style={styles.backArrow}
+            />
           </View>
         </TouchableOpacity>
       </View>
+
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              style={styles.closeButton}>
+              <View style={styles.closeCircle}>
+                <Image
+                  source={require('../../asset/cross.png')}
+                  style={styles.closeicon}
+                />
+              </View>
+            </TouchableOpacity>
+            
+            
+
+
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Capture Image</Text>
+
+            </View>
+            <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+              <TouchableOpacity onPress={openCamera}>
+                <Image
+                  source={require('../../asset/camera.png')}
+                  style={styles.camera}
+                />
+              </TouchableOpacity>
+              <Image
+                source={capturedImage || require('../../asset/noimage.png')} // Replace with your fingerprint icon
+                style={[styles.captureImage, { marginLeft: 20 }]}
+              />
+
+            </View>
+            <View style={[styles.reportButton, { marginTop: 20 }]}>
+              <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
+            </View>
+
+
+
+
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -68,20 +218,20 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   bottomContainer: {
-   borderTopLeftRadius: 20,
-  borderTopRightRadius: 20,
-  backgroundColor: '#fff', // Important
-  padding: 20,
-  position: 'absolute', // ✅ To overlay on the map
-  bottom: 0,
-  left: 0,
-  right: 0,
-  height: '44%', // Adjust as needed
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.2,
-  shadowRadius: 4,
-  elevation: 5, 
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    backgroundColor: '#fff', // Important
+    padding: 20,
+    position: 'absolute', // ✅ To overlay on the map
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '44%', // Adjust as needed
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   locationRow: {
     flexDirection: 'row',
@@ -94,12 +244,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#444',
   },
-   locationTitleText: {
-    fontWeight:"700",
+  locationTitleText: {
+    fontWeight: "700",
     fontSize: 16,
     color: '#af0909ff',
-    marginBottom:5,
-    marginLeft:35
+    marginBottom: 5,
+    marginLeft: 35
   },
   fingerprintContainer: {
     alignItems: 'center',
@@ -110,10 +260,20 @@ const styles = StyleSheet.create({
     height: 100,
     marginBottom: 10,
   },
-   marker: {
+  camera: {
+    width: 50,
+    height: 50,
+    marginBottom: 10,
+  },
+  captureImage: {
+    width: 80,
+    height: 80,
+    marginBottom: 10,
+  },
+  marker: {
     width: 30,
     height: 30,
-    
+
   },
   attendanceText: {
     textAlign: 'center',
@@ -135,20 +295,91 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 8,
   },
-  backArrowbg:{
-    width:40,
-    height:40,
-    borderRadius:10,
-    backgroundColor:'#FFFFFF',
-    alignItems:'center',
-    justifyContent:'center',
-    alignSelf:'flex-end',
-    
+  attenMarkText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+
   },
-  backArrow:{
-    height:30,
-    width:30
-  }
+  backArrowbg: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-end',
+
+  },
+  backArrow: {
+    height: 30,
+    width: 30
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#00000040',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 50,
+  },
+  modalContainer: {
+    height: 310,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    width: '92%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.07, // 7% opacity
+    shadowRadius: 18.5, // Half of 37px for similar blur effect
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#00000012'
+  },
+  closeButton: {
+    position: 'absolute',
+    top: -20,
+    alignSelf: 'center',
+  },
+  closeCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: '50%',
+    backgroundColor: '#212121',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4, // Android only
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 30,
+    height: 46,
+    paddingHorizontal: 20,
+    backgroundColor: '#ECF7FF',
+    width: '100%',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontFamily: 'OpenSans-SemiBold', // Assuming you have the semi-bold variant of Open Sans
+    fontWeight: '600', // Or 'bold' depending on platform/font setup
+    fontSize: 20,
+    lineHeight: 20, // 100% of 20px; consider increasing for better readability
+    letterSpacing: 0,
+    marginRight: 10,
+    color: '#212121',
+  },
+  closeicon: {
+    height: 20,
+    width: 20,
+    tintColor: '#fff',
+  },
 });
 
 export default AttendanceManage;
