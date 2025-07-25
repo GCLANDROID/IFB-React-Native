@@ -5,6 +5,8 @@ import Geocoder from 'react-native-geocoding';
 import Geolocation from '@react-native-community/geolocation';
 import { launchCamera } from 'react-native-image-picker';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { PERMISSIONS, request, RESULTS } from 'react-native-permissions';
+import { useNavigation } from '@react-navigation/native';
 
 Geocoder.init('AIzaSyBuxUn1s4S2yv8fqwd0wGUTFegxNyASL1g');
 
@@ -14,6 +16,7 @@ const AttendanceManage = () => {
   const [address, setAddress] = useState('Fetching address......');
   const [modalVisible, setModalVisible] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const navigation=useNavigation();
 
   const requestCameraPermission = async () => {
     if (Platform.OS === 'android') {
@@ -61,20 +64,38 @@ const AttendanceManage = () => {
     );
   };
 
-  useEffect(() => {
-    const getLocation = async () => {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-      );
+useEffect(() => {
+  const getLocation = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'This app needs access to your location to mark attendance.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
 
-      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-        Alert.alert('Permission denied');
-        return;
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert('Permission Denied', 'Location permission is required.');
+          return;
+        }
+      } else {
+         Geolocation.requestAuthorization();
+        // const permission = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+        // if (permission !== RESULTS.GRANTED) {
+        //   Alert.alert('Permission Denied', 'Location permission is required.');
+        //   return;
+        // }
+        // iOS only
       }
 
+      // Now get location
       Geolocation.getCurrentPosition(
         (position) => {
-          console.log('✅ Got location:', position);
           const { latitude, longitude } = position.coords;
           setLocation({
             latitude,
@@ -82,46 +103,50 @@ const AttendanceManage = () => {
             latitudeDelta: 0.005,
             longitudeDelta: 0.005,
           });
+
           Geocoder.from(latitude, longitude)
-            .then(json => {
+            .then((json) => {
               if (json.results.length > 0) {
                 const address = json.results[0].formatted_address;
-                console.log('📍 Address:', address);
-                setAddress(address); // setAddress should be a useState hook
+                setAddress(address);
               } else {
                 setAddress('Address not found');
               }
             })
-            .catch(error => {
+            .catch((error) => {
               console.warn('❌ Geocoding error:', error);
               setAddress('Unable to get address');
             });
         },
-
         (error) => {
           console.warn('❌ Error getting location:', error);
+          setAddress('Unable to get location');
         },
         {
-          enableHighAccuracy: false,
+          enableHighAccuracy: true,
           timeout: 15000,
           maximumAge: 10000,
         }
       );
-    };
+    } catch (err) {
+      console.warn('❌ Permission or location error:', err);
+    }
+  };
 
-    getLocation();
-  }, []);
+  getLocation();
+}, []);
 
 
 
 
   return (
     <SafeAreaProvider>
-       <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+      <SafeAreaView style={{flex:1,backgroundColor:'#FF0020'}}>
+         <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
          <StatusBar backgroundColor="#FF0020" barStyle="dark-content" />
         <View style={styles.container}>
           <View style={styles.toolheader}>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
               <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon}></Image>
             </TouchableOpacity>
             <TouchableOpacity>
@@ -210,9 +235,9 @@ const AttendanceManage = () => {
                   />
 
                 </View>
-                <View style={[styles.reportButton, { marginTop: 20 }]}>
+                <TouchableOpacity style={[styles.reportButton, { marginTop: 20 }]}>
                   <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
-                </View>
+                </TouchableOpacity>
 
 
 
@@ -222,6 +247,8 @@ const AttendanceManage = () => {
           </Modal>
         </View>
       </View>
+      </SafeAreaView>
+      
     </SafeAreaProvider>
 
 
@@ -305,6 +332,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3B30',
     paddingVertical: 14,
     borderRadius: 10,
+    marginBottom:10,
     justifyContent: 'center',
     alignItems: 'center',
   },

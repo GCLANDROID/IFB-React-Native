@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     View,
@@ -35,6 +36,7 @@ const AttendanceReport = () => {
     const currentMonth = new Date().toLocaleString('default', { month: 'long' });
     const [selectedMonth, setSelectedMonth] = useState(currentMonth);
     const scrollRef = useRef();
+    const navigation=useNavigation();
 
     useEffect(() => {
         const index = months.indexOf(selectedMonth);
@@ -94,10 +96,11 @@ const AttendanceReport = () => {
 
     return (
         <SafeAreaProvider>
-            <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+            <SafeAreaView style={{flex:1,backgroundColor:'#FF0020'}}>
+                 <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
                      <StatusBar backgroundColor="#FF0020" barStyle="dark-content" />
             <View style={styles.header}>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
                      <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon}></Image>
                 </TouchableOpacity>
                 <TouchableOpacity>
@@ -115,6 +118,8 @@ const AttendanceReport = () => {
                     />
                 </View>
             </View>
+            </SafeAreaView>
+           
         </SafeAreaProvider>
 
 
