@@ -8,6 +8,7 @@ import LoginScreen from '../Common/LoginScreen';
 import Dashboard from '../Common/Dashboard';
 import AttendanceDashboard from '../Attendance/AttendanceDashboard';
 import AttendanceManage from '../Attendance/AttendanceManage';
+import AttendanceReport from '../Attendance/AttendanceReport';
 
 
 const Stack = createNativeStackNavigator();
@@ -23,6 +24,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Dashboard" component={Dashboard} />
         <Stack.Screen name="AttendanceDashboard" component={AttendanceDashboard} />
         <Stack.Screen name="AttendanceManage" component={AttendanceManage} />
+        <Stack.Screen name="AttendanceReport" component={AttendanceReport} />
       </Stack.Navigator>
 
     </SafeAreaProvider>

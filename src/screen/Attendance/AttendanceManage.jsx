@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, PermissionsAndroid, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, PermissionsAndroid, Alert, Modal, StatusBar } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geocoder from 'react-native-geocoding';
 import Geolocation from '@react-native-community/geolocation';
 import { launchCamera } from 'react-native-image-picker';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 Geocoder.init('AIzaSyBuxUn1s4S2yv8fqwd0wGUTFegxNyASL1g');
 
@@ -115,99 +116,115 @@ const AttendanceManage = () => {
 
 
   return (
-    <View style={styles.container}>
-      {/* Map View */}
-      <View style={{ flex: 2 }}>
-        {location && (
-          <MapView style={styles.map} region={location}>
-            <Marker coordinate={location} title="Your Location" />
-          </MapView>
-        )}
+    <SafeAreaProvider>
+       <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+         <StatusBar backgroundColor="#FF0020" barStyle="dark-content" />
+        <View style={styles.container}>
+          <View style={styles.toolheader}>
+            <TouchableOpacity>
+              <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon}></Image>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon}></Image>
+            </TouchableOpacity>
 
-      </View>
-
-      {/* Bottom Section */}
-      <View style={styles.bottomContainer}>
-        {/* Location Details */}
-        <Text style={styles.locationTitleText}>
-          Location
-        </Text>
-        <View style={styles.locationRow}>
-          <Image
-            source={require('../../asset/placeholder.gif')} // Replace with your fingerprint icon
-            style={styles.marker}
-          />
-          <Text style={styles.locationText}>
-            {address}
-          </Text>
-        </View>
-
-        {/* Fingerprint + Attendance Text */}
-        <TouchableOpacity style={styles.fingerprintContainer} onPress={() => setModalVisible(true)}>
-          <Image
-            source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
-            style={styles.fingerprint}
-          />
-          <Text style={styles.attendanceText}>Mark{'\n'}Your Attendance</Text>
-        </TouchableOpacity>
-
-        {/* Attendance Report Button */}
-        <TouchableOpacity style={styles.reportButton}>
-          <Text style={styles.reportText}>Attendance Report</Text>
-          <View style={styles.backArrowbg}>
-            <Image
-              source={require('../../asset/back-arrow.png')} // Replace with your fingerprint icon
-              style={styles.backArrow}
-            />
           </View>
-        </TouchableOpacity>
-      </View>
+          {/* Map View */}
+          <View style={{ flex: 2 }}>
+            {location && (
+              <MapView style={styles.map} region={location}>
+                <Marker coordinate={location} title="Your Location" />
+              </MapView>
+            )}
 
-      <Modal visible={modalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={styles.closeButton}>
-              <View style={styles.closeCircle}>
+          </View>
+
+          {/* Bottom Section */}
+          <View style={styles.bottomContainer}>
+            {/* Location Details */}
+            <Text style={styles.locationTitleText}>
+              Location
+            </Text>
+            <View style={styles.locationRow}>
+              <Image
+                source={require('../../asset/placeholder.gif')} // Replace with your fingerprint icon
+                style={styles.marker}
+              />
+              <Text style={styles.locationText}>
+                {address}
+              </Text>
+            </View>
+
+            {/* Fingerprint + Attendance Text */}
+            <TouchableOpacity style={styles.fingerprintContainer} onPress={() => setModalVisible(true)}>
+              <Image
+                source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
+                style={styles.fingerprint}
+              />
+              <Text style={styles.attendanceText}>Mark{'\n'}Your Attendance</Text>
+            </TouchableOpacity>
+
+            {/* Attendance Report Button */}
+            <TouchableOpacity style={styles.reportButton}>
+              <Text style={styles.reportText}>Attendance Report</Text>
+              <View style={styles.backArrowbg}>
                 <Image
-                  source={require('../../asset/cross.png')}
-                  style={styles.closeicon}
+                  source={require('../../asset/back-arrow.png')} // Replace with your fingerprint icon
+                  style={styles.backArrow}
                 />
               </View>
             </TouchableOpacity>
-            
-            
-
-
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Capture Image</Text>
-
-            </View>
-            <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-              <TouchableOpacity onPress={openCamera}>
-                <Image
-                  source={require('../../asset/camera.png')}
-                  style={styles.camera}
-                />
-              </TouchableOpacity>
-              <Image
-                source={capturedImage || require('../../asset/noimage.png')} // Replace with your fingerprint icon
-                style={[styles.captureImage, { marginLeft: 20 }]}
-              />
-
-            </View>
-            <View style={[styles.reportButton, { marginTop: 20 }]}>
-              <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
-            </View>
-
-
-
-
           </View>
+
+          <Modal visible={modalVisible} transparent animationType="fade">
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <TouchableOpacity
+                  onPress={() => setModalVisible(false)}
+                  style={styles.closeButton}>
+                  <View style={styles.closeCircle}>
+                    <Image
+                      source={require('../../asset/cross.png')}
+                      style={styles.closeicon}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+
+
+
+                <View style={styles.header}>
+                  <Text style={styles.headerTitle}>Capture Image</Text>
+
+                </View>
+                <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+                  <TouchableOpacity onPress={openCamera}>
+                    <Image
+                      source={require('../../asset/camera.png')}
+                      style={styles.camera}
+                    />
+                  </TouchableOpacity>
+                  <Image
+                    source={capturedImage || require('../../asset/noimage.png')} // Replace with your fingerprint icon
+                    style={[styles.captureImage, { marginLeft: 20 }]}
+                  />
+
+                </View>
+                <View style={[styles.reportButton, { marginTop: 20 }]}>
+                  <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
+                </View>
+
+
+
+
+              </View>
+            </View>
+          </Modal>
         </View>
-      </Modal>
-    </View>
+      </View>
+    </SafeAreaProvider>
+
+
   );
 };
 
@@ -218,8 +235,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   bottomContainer: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderWidth:1,
+    borderColor: '#00000012',
     backgroundColor: '#fff', // Important
     padding: 20,
     position: 'absolute', // ✅ To overlay on the map
@@ -379,6 +398,20 @@ const styles = StyleSheet.create({
     height: 20,
     width: 20,
     tintColor: '#fff',
+  },
+  toolheader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    backgroundColor: '#FF0020',
+    height: 60,
+  },
+  headerIcon: {
+    width: 24,
+    height: 24,
+    tintColor: '#FFFFFF'
   },
 });
 

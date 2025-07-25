@@ -45,7 +45,7 @@ const AttendanceDashboard = () => {
                                     <Image source={require('../../asset/attendance-punch.png')} style={styles.menuICon}></Image>
                                     <Text style={styles.menuTextText}> Attendance{'\n'}Manage</Text>
                                 </TouchableOpacity>
-                                 <TouchableOpacity style={styles.card} >
+                                 <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('AttendanceReport')}>
                                     <Image source={require('../../asset/attendance-report.png')} style={styles.menuICon}></Image>
                                     <Text style={styles.menuTextText}>Attendance{'\n'}Report</Text>
                                 </TouchableOpacity>
