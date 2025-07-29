@@ -86,6 +86,8 @@ const LoginScreen = () => {
                    await AsyncStorage.setItem('LeaveURL', responseData.LeaveURL);
                    await AsyncStorage.setItem('LeaveEncahURL', responseData.LeaveEncahURL);
                    await AsyncStorage.setItem('SecurityCode',securityCode);
+                   await AsyncStorage.setItem('Password', responseData.Password);
+                   await AsyncStorage.setItem('ClientID', responseData.ClientID);
                 navigation.replace('AttendanceDashboard');
             } else {
                 setLoading(false);

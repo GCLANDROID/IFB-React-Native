@@ -7,8 +7,14 @@ import { launchCamera } from 'react-native-image-picker';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PERMISSIONS, request, RESULTS } from 'react-native-permissions';
 import { useNavigation } from '@react-navigation/native';
+// ✅ Adjust path as needed
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API from '../../util/API';
+import { Loader } from '../../util/Loader';
 
 Geocoder.init('AIzaSyBuxUn1s4S2yv8fqwd0wGUTFegxNyASL1g');
+
 
 
 const AttendanceManage = () => {
@@ -16,7 +22,8 @@ const AttendanceManage = () => {
   const [address, setAddress] = useState('Fetching address......');
   const [modalVisible, setModalVisible] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
-  const navigation=useNavigation();
+  const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
 
   const requestCameraPermission = async () => {
     if (Platform.OS === 'android') {
@@ -64,185 +71,227 @@ const AttendanceManage = () => {
     );
   };
 
-useEffect(() => {
-  const getLocation = async () => {
-    try {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+  useEffect(() => {
+    const getLocation = async () => {
+      try {
+        if (Platform.OS === 'android') {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: 'Location Permission',
+              message: 'This app needs access to your location to mark attendance.',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            }
+          );
+
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            Alert.alert('Permission Denied', 'Location permission is required.');
+            return;
+          }
+        } else {
+          Geolocation.requestAuthorization();
+          // const permission = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+          // if (permission !== RESULTS.GRANTED) {
+          //   Alert.alert('Permission Denied', 'Location permission is required.');
+          //   return;
+          // }
+          // iOS only
+        }
+
+        // Now get location
+        Geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setLocation({
+              latitude,
+              longitude,
+              latitudeDelta: 0.005,
+              longitudeDelta: 0.005,
+            });
+
+            Geocoder.from(latitude, longitude)
+              .then((json) => {
+                if (json.results.length > 0) {
+                  const address = json.results[0].formatted_address;
+                  setAddress(address);
+                } else {
+                  setAddress('Address not found');
+                }
+              })
+              .catch((error) => {
+                console.warn('❌ Geocoding error:', error);
+                setAddress('Unable to get address');
+              });
+          },
+          (error) => {
+            console.warn('❌ Error getting location:', error);
+            setAddress('Unable to get location');
+          },
           {
-            title: 'Location Permission',
-            message: 'This app needs access to your location to mark attendance.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 10000,
           }
         );
-
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert('Permission Denied', 'Location permission is required.');
-          return;
-        }
-      } else {
-         Geolocation.requestAuthorization();
-        // const permission = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-        // if (permission !== RESULTS.GRANTED) {
-        //   Alert.alert('Permission Denied', 'Location permission is required.');
-        //   return;
-        // }
-        // iOS only
+      } catch (err) {
+        console.warn('❌ Permission or location error:', err);
       }
+    };
 
-      // Now get location
-      Geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setLocation({
-            latitude,
-            longitude,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          });
+    getLocation();
+  }, []);
 
-          Geocoder.from(latitude, longitude)
-            .then((json) => {
-              if (json.results.length > 0) {
-                const address = json.results[0].formatted_address;
-                setAddress(address);
-              } else {
-                setAddress('Address not found');
-              }
-            })
-            .catch((error) => {
-              console.warn('❌ Geocoding error:', error);
-              setAddress('Unable to get address');
-            });
-        },
-        (error) => {
-          console.warn('❌ Error getting location:', error);
-          setAddress('Unable to get location');
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 15000,
-          maximumAge: 10000,
-        }
+
+  const markAttendance = async () => {
+    if (!location) {
+      Alert.alert('Location not available');
+      return;
+    }
+
+    try {
+      const loginID = await AsyncStorage.getItem('UserID');
+      const password = await AsyncStorage.getItem('Password');
+      const clientID = await AsyncStorage.getItem('ClientID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+      setLoading(true);
+
+      const url = API.POST_ATTENDANCE(
+        loginID,
+        password,
+        clientID,
+        securityCode,
+        address,
+        location.longitude,
+        location.latitude
       );
-    } catch (err) {
-      console.warn('❌ Permission or location error:', err);
+
+      const response = await axios.get(url);
+
+      if (response?.data?.responseStatus === true) {
+        setLoading(false);
+        Alert.alert('Success', 'Attendance marked successfully.');
+
+      } else {
+        setLoading(false);
+        Alert.alert('Failed', response?.data?.responseText || 'Failed to mark attendance.');
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error('API Error:', error);
+      Alert.alert('Error', 'An error occurred while marking attendance.');
     }
   };
-
-  getLocation();
-}, []);
 
 
 
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{flex:1,backgroundColor:'#FF0020'}}>
-         <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
-         <StatusBar backgroundColor="#FF0020" barStyle="dark-content" />
-        <View style={styles.container}>
-          <View style={styles.toolheader}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon}></Image>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon}></Image>
-            </TouchableOpacity>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FF0020' }}>
+        <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+          <StatusBar backgroundColor="#FF0020" barStyle="dark-content" />
+          <View style={styles.container}>
+            {loading && <Loader />}
+            <View style={styles.toolheader}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon}></Image>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon}></Image>
+              </TouchableOpacity>
 
-          </View>
-          {/* Map View */}
-          <View style={{ flex: 2 }}>
-            {location && (
-              <MapView style={styles.map} region={location}>
-                <Marker coordinate={location} title="Your Location" />
-              </MapView>
-            )}
+            </View>
+            {/* Map View */}
+            <View style={{ flex: 2 }}>
+              {location && (
+                <MapView style={styles.map} region={location}>
+                  <Marker coordinate={location} title="Your Location" />
+                </MapView>
+              )}
 
-          </View>
+            </View>
 
-          {/* Bottom Section */}
-          <View style={styles.bottomContainer}>
-            {/* Location Details */}
-            <Text style={styles.locationTitleText}>
-              Location
-            </Text>
-            <View style={styles.locationRow}>
-              <Image
-                source={require('../../asset/placeholder.gif')} // Replace with your fingerprint icon
-                style={styles.marker}
-              />
-              <Text style={styles.locationText}>
-                {address}
+            {/* Bottom Section */}
+            <View style={styles.bottomContainer}>
+              {/* Location Details */}
+              <Text style={styles.locationTitleText}>
+                Location
               </Text>
-            </View>
-
-            {/* Fingerprint + Attendance Text */}
-            <TouchableOpacity style={styles.fingerprintContainer} onPress={() => setModalVisible(true)}>
-              <Image
-                source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
-                style={styles.fingerprint}
-              />
-              <Text style={styles.attendanceText}>Mark{'\n'}Your Attendance</Text>
-            </TouchableOpacity>
-
-            {/* Attendance Report Button */}
-           
-              <View style={{height:40}}></View>
-          </View>
-
-          <Modal visible={modalVisible} transparent animationType="fade">
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContainer}>
-                <TouchableOpacity
-                  onPress={() => setModalVisible(false)}
-                  style={styles.closeButton}>
-                  <View style={styles.closeCircle}>
-                    <Image
-                      source={require('../../asset/cross.png')}
-                      style={styles.closeicon}
-                    />
-                  </View>
-                </TouchableOpacity>
-
-
-
-
-                <View style={styles.header}>
-                  <Text style={styles.headerTitle}>Capture Image</Text>
-
-                </View>
-                <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-                  <TouchableOpacity onPress={openCamera}>
-                    <Image
-                      source={require('../../asset/camera.png')}
-                      style={styles.camera}
-                    />
-                  </TouchableOpacity>
-                  <Image
-                    source={capturedImage || require('../../asset/noimage.png')} // Replace with your fingerprint icon
-                    style={[styles.captureImage, { marginLeft: 20 }]}
-                  />
-
-                </View>
-                <TouchableOpacity style={[styles.reportButton, { marginTop: 20 }]}>
-                  <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
-                </TouchableOpacity>
-              
-
-
-
-
+              <View style={styles.locationRow}>
+                <Image
+                  source={require('../../asset/placeholder.gif')} // Replace with your fingerprint icon
+                  style={styles.marker}
+                />
+                <Text style={styles.locationText}>
+                  {address}
+                </Text>
               </View>
+
+              {/* Fingerprint + Attendance Text */}
+              <TouchableOpacity style={styles.fingerprintContainer} onPress={markAttendance}>
+                <Image
+                  source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
+                  style={styles.fingerprint}
+                />
+                <Text style={styles.attendanceText}>Mark{'\n'}Your Attendance</Text>
+              </TouchableOpacity>
+
+              {/* Attendance Report Button */}
+
+              <View style={{ height: 40 }}></View>
             </View>
-          </Modal>
+
+            <Modal visible={modalVisible} transparent animationType="fade">
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContainer}>
+                  <TouchableOpacity
+                    onPress={() => setModalVisible(false)}
+                    style={styles.closeButton}>
+                    <View style={styles.closeCircle}>
+                      <Image
+                        source={require('../../asset/cross.png')}
+                        style={styles.closeicon}
+                      />
+                    </View>
+                  </TouchableOpacity>
+
+
+
+
+                  <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Capture Image</Text>
+
+                  </View>
+                  <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+                    <TouchableOpacity onPress={openCamera}>
+                      <Image
+                        source={require('../../asset/camera.png')}
+                        style={styles.camera}
+                      />
+                    </TouchableOpacity>
+                    <Image
+                      source={capturedImage || require('../../asset/noimage.png')} // Replace with your fingerprint icon
+                      style={[styles.captureImage, { marginLeft: 20 }]}
+                    />
+
+                  </View>
+                  <TouchableOpacity style={[styles.reportButton, { marginTop: 20 }]}>
+                    <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
+                  </TouchableOpacity>
+
+
+
+
+
+                </View>
+              </View>
+            </Modal>
+          </View>
         </View>
-      </View>
       </SafeAreaView>
-      
+
     </SafeAreaProvider>
 
 
@@ -258,7 +307,7 @@ const styles = StyleSheet.create({
   bottomContainer: {
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    borderWidth:1,
+    borderWidth: 1,
     borderColor: '#00000012',
     backgroundColor: '#fff', // Important
     padding: 20,
@@ -313,7 +362,7 @@ const styles = StyleSheet.create({
   marker: {
     width: 30,
     height: 30,
-    bottom:10
+    bottom: 10
 
   },
   attendanceText: {
@@ -327,7 +376,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3B30',
     paddingVertical: 14,
     borderRadius: 10,
-    marginBottom:10,
+    marginBottom: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },

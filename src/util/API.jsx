@@ -23,6 +23,21 @@ const API = {
     )}&Month=${encodeURIComponent(
       month
     )}&ReportType=${reportType}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+    POST_ATTENDANCE: (loginID, password, clientID, securityCode, address, longitude, latitude) =>
+    `${BASE_URL}/postEmployeeAttendance?LoginID=${encodeURIComponent(
+      loginID
+    )}&password=${encodeURIComponent(
+      password
+    )}&ClientID=${encodeURIComponent(
+      clientID
+    )}&SecurityCode=${encodeURIComponent(
+      securityCode
+    )}&Address=${encodeURIComponent(
+      address
+    )}&Longitude=${encodeURIComponent(
+      longitude
+    )}&Latitude=${encodeURIComponent(latitude)}`,
 };
 
   // Add more endpoints here as needed
