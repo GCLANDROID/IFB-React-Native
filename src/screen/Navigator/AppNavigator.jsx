@@ -9,6 +9,8 @@ import Dashboard from '../Common/Dashboard';
 import AttendanceDashboard from '../Attendance/AttendanceDashboard';
 import AttendanceManage from '../Attendance/AttendanceManage';
 import AttendanceReport from '../Attendance/AttendanceReport';
+import WebView from '../Common/WebViewScreen';
+import WebViewScreen from '../Common/WebViewScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -25,6 +27,7 @@ const AppNavigator = () => {
         <Stack.Screen name="AttendanceDashboard" component={AttendanceDashboard} />
         <Stack.Screen name="AttendanceManage" component={AttendanceManage} />
         <Stack.Screen name="AttendanceReport" component={AttendanceReport} />
+        <Stack.Screen name="WebViewScreen" component={WebViewScreen} />
       </Stack.Navigator>
 
     </SafeAreaProvider>

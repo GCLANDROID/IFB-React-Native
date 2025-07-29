@@ -15,28 +15,30 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API from '../../util/API';
+import { Loader } from '../../util/Loader';
+
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const attendanceData = [
-    { date: '01', day: 'Tue', punchIn: '9.24 AM', punchOut: '6.25 PM', status: 'P' },
-    { date: '02', day: 'Thu', punchIn: '9.24 AM', punchOut: '6.25 PM', status: 'P' },
-    { date: '03', day: 'Fri', punchIn: '9.24 AM', punchOut: '6.25 PM', status: 'P' },
-    { date: '04', day: 'Sat', punchIn: '9.24 AM', punchOut: '6.25 PM', status: 'P' },
-     { date: '05', day: 'Sat', punchIn: '9.24 AM', punchOut: '6.25 PM', status: 'P' },
-      { date: '06', day: 'Sat', punchIn: '9.24 AM', punchOut: '6.25 PM', status: 'P' },
-      { date: '07', day: 'Sat', punchIn: '9.24 AM', punchOut: '6.25 PM', status: 'P' },
-      { date: '08', day: 'Sat', punchIn: '9.24 AM', punchOut: '6.25 PM', status: 'P' },
-];
+
 
 const AttendanceReport = () => {
     const currentMonth = new Date().toLocaleString('default', { month: 'long' });
     const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+    const [attendanceData, setAttendanceData] = useState([]);
+    const [loading, setLoading] = useState(false);
+
     const scrollRef = useRef();
-    const navigation=useNavigation();
+    const navigation = useNavigation();
+    const reportType = 1;
+
+
 
     useEffect(() => {
         const index = months.indexOf(selectedMonth);
@@ -47,6 +49,59 @@ const AttendanceReport = () => {
             });
         }
     }, [selectedMonth]);
+
+    useEffect(() => {
+        fetchAttendance(selectedMonth);
+    }, [selectedMonth]);
+
+
+
+    const getFinancialYear = (monthName) => {
+        const monthIndex = months.indexOf(monthName); // months is your months array
+        const currentYear = new Date().getFullYear();
+
+        if (monthIndex >= 0 && monthIndex <= 2) {
+            // Jan, Feb, Mar
+            return `${currentYear - 1}-${currentYear}`;
+        } else {
+            // Apr to Dec
+            return `${currentYear}-${currentYear + 1}`;
+        }
+    };
+
+    const fetchAttendance = async (monthName) => {
+        const financialYear = getFinancialYear(monthName);
+        setLoading(true);
+        try {
+            const storedLoginID = await AsyncStorage.getItem('UserID');
+            const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+
+            const response = await axios.get(API.FETCH_ATTENDANCE(
+                storedLoginID,
+                financialYear,
+                monthName,
+                reportType,
+                securityCode
+            ));
+
+            const data = response.data?.responseData || [];
+
+            const formatted = data.map((item) => ({
+                date: item.Date?.split(' ')[0]?.slice(0, 2) ?? '',
+                day: item.Day?.slice(0, 3) ?? '',
+                punchIn: item.Time ?? '',
+                punchOut: item.LogoutTime ?? '',
+                status: item.Status ?? '',
+            }));
+
+            setAttendanceData(formatted);
+        } catch (error) {
+            console.error('Error fetching attendance:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const renderMonthTabs = () => (
         <ScrollView
@@ -96,30 +151,31 @@ const AttendanceReport = () => {
 
     return (
         <SafeAreaProvider>
-            <SafeAreaView style={{flex:1,backgroundColor:'#FF0020'}}>
-                 <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
-                     <StatusBar backgroundColor="#FF0020" barStyle="dark-content" />
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                     <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon}></Image>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                     <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon}></Image>
-                </TouchableOpacity>
-               
-            </View>
-                <View style={styles.container}>
-                    {renderMonthTabs()}
-                    <FlatList
-                        data={attendanceData}
-                        keyExtractor={(item, index) => index.toString()}
-                        contentContainerStyle={styles.listContainer}
-                        renderItem={renderAttendanceCard}
-                    />
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#FF0020' }}>
+                <View style={{ flex: 1, backgroundColor: '#FF0020', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+                    <StatusBar backgroundColor="#FF0020" barStyle="dark-content" />
+                     {loading && <Loader />}
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                            <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon}></Image>
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon}></Image>
+                        </TouchableOpacity>
+
+                    </View>
+                    <View style={styles.container}>
+                        {renderMonthTabs()}
+                        <FlatList
+                            data={attendanceData}
+                            keyExtractor={(item, index) => index.toString()}
+                            contentContainerStyle={styles.listContainer}
+                            renderItem={renderAttendanceCard}
+                        />
+                    </View>
                 </View>
-            </View>
             </SafeAreaView>
-           
+
         </SafeAreaProvider>
 
 
@@ -137,19 +193,19 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         paddingTop: 40,
     },
-    header:{
+    header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingBottom: 10,
-        backgroundColor:'#FF0020',
+        backgroundColor: '#FF0020',
         height: 60,
     },
     headerIcon: {
-        width: 24,  
+        width: 24,
         height: 24,
-        tintColor:'#FFFFFF'
+        tintColor: '#FFFFFF'
     },
     monthTabs: {
         flexDirection: 'row',

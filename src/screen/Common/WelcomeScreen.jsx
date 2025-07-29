@@ -12,19 +12,32 @@ import {
 
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const WelcomeScreen = () => {
     const navigation = useNavigation()
 
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            navigation.replace('LoginScreen'); // Replace splash with home
-        }, 2000); // 2 seconds = 2000 milliseconds
+   useEffect(() => {
+  const checkLoginStatus = async () => {
+    try {
+      const storedUserID = await AsyncStorage.getItem('UserID');
 
-        return () => clearTimeout(timer); // Cleanup
-    }, []);
+      if (!storedUserID || storedUserID === 'null' || storedUserID === '') {
+        navigation.replace('LoginScreen');
+      } else {
+        navigation.replace('AttendanceDashboard');
+      }
+    } catch (error) {
+      console.error('Error reading UserID:', error);
+      navigation.replace('LoginScreen'); // fallback
+    }
+  };
+
+  setTimeout(checkLoginStatus, 2000); // 2-second splash
+
+}, []);
 
 
 

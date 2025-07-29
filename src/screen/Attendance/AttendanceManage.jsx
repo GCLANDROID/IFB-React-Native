@@ -123,7 +123,7 @@ useEffect(() => {
           setAddress('Unable to get location');
         },
         {
-          enableHighAccuracy: true,
+          enableHighAccuracy: false,
           timeout: 15000,
           maximumAge: 10000,
         }
@@ -190,15 +190,8 @@ useEffect(() => {
             </TouchableOpacity>
 
             {/* Attendance Report Button */}
-            <TouchableOpacity style={styles.reportButton}>
-              <Text style={styles.reportText}>Attendance Report</Text>
-              <View style={styles.backArrowbg}>
-                <Image
-                  source={require('../../asset/back-arrow.png')} // Replace with your fingerprint icon
-                  style={styles.backArrow}
-                />
-              </View>
-            </TouchableOpacity>
+           
+              <View style={{height:40}}></View>
           </View>
 
           <Modal visible={modalVisible} transparent animationType="fade">
@@ -238,6 +231,7 @@ useEffect(() => {
                 <TouchableOpacity style={[styles.reportButton, { marginTop: 20 }]}>
                   <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
                 </TouchableOpacity>
+              
 
 
 
@@ -319,6 +313,7 @@ const styles = StyleSheet.create({
   marker: {
     width: 30,
     height: 30,
+    bottom:10
 
   },
   attendanceText: {
