@@ -131,7 +131,7 @@ const AttendanceManage = () => {
           },
           {
             enableHighAccuracy: false,
-            timeout: 15000,
+            timeout: 35000,
             maximumAge: 10000,
           }
         );

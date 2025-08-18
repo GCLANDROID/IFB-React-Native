@@ -27,7 +27,7 @@ const WelcomeScreen = () => {
       if (!storedUserID || storedUserID === 'null' || storedUserID === '') {
         navigation.replace('LoginScreen');
       } else {
-        navigation.replace('AttendanceDashboard');
+        navigation.replace('CSRDashbaord');
       }
     } catch (error) {
       console.error('Error reading UserID:', error);

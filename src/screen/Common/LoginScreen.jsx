@@ -88,7 +88,7 @@ const LoginScreen = () => {
                    await AsyncStorage.setItem('SecurityCode',securityCode);
                    await AsyncStorage.setItem('Password', responseData.Password);
                    await AsyncStorage.setItem('ClientID', responseData.ClientID);
-                navigation.replace('AttendanceDashboard');
+                navigation.replace('CSRDashbaord');
             } else {
                 setLoading(false);
                 showToast(res.data.responseText);
