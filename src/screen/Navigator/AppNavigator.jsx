@@ -5,12 +5,15 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import WelcomeScreen from '../Common/WelcomeScreen';
 import LoginScreen from '../Common/LoginScreen';
-import Dashboard from '../Common/Dashboard';
 import AttendanceDashboard from '../Attendance/AttendanceDashboard';
 import AttendanceManage from '../Attendance/AttendanceManage';
 import AttendanceReport from '../Attendance/AttendanceReport';
 import WebView from '../Common/WebViewScreen';
 import WebViewScreen from '../Common/WebViewScreen';
+import Dashboard from '../Dashboard/Dashboard';
+import CSRDashbaord from '../Dashboard/CSRDashbaord';
+import SalesDashboard from '../CSRSalesManagement/SalesDashboard';
+import CSRAttendanceDashboard from '../Attendance/CSRAttendanceDashboard';
 
 
 const Stack = createNativeStackNavigator();
@@ -28,6 +31,9 @@ const AppNavigator = () => {
         <Stack.Screen name="AttendanceManage" component={AttendanceManage} />
         <Stack.Screen name="AttendanceReport" component={AttendanceReport} />
         <Stack.Screen name="WebViewScreen" component={WebViewScreen} />
+        <Stack.Screen name="CSRDashbaord" component={CSRDashbaord} />
+        <Stack.Screen name="SalesDashboard" component={SalesDashboard} />
+        <Stack.Screen name="CSRAttendanceDashboard" component={CSRAttendanceDashboard} />
       </Stack.Navigator>
 
     </SafeAreaProvider>
