@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Image,
@@ -14,20 +14,174 @@ import {
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PieChart } from 'react-native-chart-kit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API from '../../util/API';
+import axios from 'axios';
+import { Loader } from '../../util/Loader';
 
 const screenWidth = Dimensions.get("window").width;
 
 const CSRDashbaord = () => {
     const navigation = useNavigation();
+    const [userName, setUserName] = useState('');
+    const [notification, setNotification] = useState('');
+    const [notificationTitle, setNotificationTitle] = useState('');
+    const [target, setTarget] = useState(0);
+    const [sold, setSold] = useState(0);
+    const [approved, setApproved] = useState(0);
+    const [pending, setPending] = useState(0);
+    const [rejected, setRejected] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [totalSales, setTotalSales] = useState('');
+    const [deliveryPending, setDeliveryPending] = useState('');
+    const [ticketGenerated, setTicketGenerated] = useState('');
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const storedUserName = await AsyncStorage.getItem('UserName');
+                const storedUserID = await AsyncStorage.getItem('UserID');
+                const notification = await AsyncStorage.getItem('Notify_Remarks');
+                const Target = await AsyncStorage.getItem('MonthlyTarget');
+                const Sold = await AsyncStorage.getItem('Sold');
+                const Approved = await AsyncStorage.getItem('Approved');
+                const Pending = await AsyncStorage.getItem('Pending');
+                const Rejected = await AsyncStorage.getItem('Rejected');
+
+                setUserName(storedUserName || '');
+                setNotification(notification || '');
+                setTarget(parseInt(Target) || 0);
+                setSold(parseInt(Sold) || 0);
+                setApproved(parseInt(Approved) || 0);
+                setPending(parseInt(Pending) || 0);
+                setRejected(parseInt(Rejected) || 0);
+                // setUserID(storedUserID || '');
+
+            } catch (error) {
+                console.error('Error loading stored data:', error);
+            }
+        };
+
+        loadData();
+        fetchReport();
+        fetchNotification();
+    }, []);
 
     // Pie chart data
     const chartData = [
-        { name: "Target", population: 30, color: "#3b82f6", legendFontColor: "#7F7F7F", legendFontSize: 12 },
-        { name: "Sold", population: 20, color: "#22c55e", legendFontColor: "#7F7F7F", legendFontSize: 12 },
-        { name: "Approved", population: 10, color: "#facc15", legendFontColor: "#7F7F7F", legendFontSize: 12 },
-        { name: "Pending", population: 10, color: "#f97316", legendFontColor: "#7F7F7F", legendFontSize: 12 },
-        { name: "Rejected", population: 5, color: "#ef4444", legendFontColor: "#7F7F7F", legendFontSize: 12 }
+        { name: "Target", population: target, color: "#3b82f6", legendFontColor: "#7F7F7F", legendFontSize: 12 },
+        { name: "Sold", population: sold, color: "#22c55e", legendFontColor: "#7F7F7F", legendFontSize: 12 },
+        { name: "Approved", population: approved, color: "#068d4aff", legendFontColor: "#7F7F7F", legendFontSize: 12 },
+        { name: "Pending", population: pending, color: "#b7ff0ef8", legendFontColor: "#7F7F7F", legendFontSize: 12 },
+        { name: "Rejected", population: rejected, color: "#ef4444", legendFontColor: "#7F7F7F", legendFontSize: 12 }
     ];
+
+
+    const fetchNotification = async () => {
+
+        setLoading(true);
+        try {
+            const storedLoginID = await AsyncStorage.getItem('UserID');
+            const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+
+            const response = await axios.get(API.FETCH_NOTIFICATION(
+                storedLoginID,
+                securityCode,
+                1,
+
+            ));
+
+            if (response.data.responseStatus === true) {
+                setLoading(false);
+                const responseData = Array.isArray(response.data.responseData)
+                    ? response.data.responseData[0]
+                    : response.data.responseData;
+                const notification = responseData.Remarks || '';
+                const notificationTitle = responseData.HeaderTitle || '';
+                setNotification(notification);
+                setNotificationTitle(notificationTitle);
+
+            }
+        } catch (error) {
+            console.error('Error fetching attendance:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
+    const getFinancialYear = () => {
+        const today = new Date();
+        const month = today.getMonth(); // 0 = Jan, 1 = Feb, ... 11 = Dec
+        const year = today.getFullYear();
+
+        if (month <= 2) {
+            // Jan (0), Feb (1), Mar (2)
+            return `${year - 1}-${year}`;
+        } else {
+            // Apr (3) onwards
+            return `${year}-${year + 1}`;
+        }
+    };
+
+
+    const fetchReport = async () => {
+        const fy = getFinancialYear();
+        console.log('FinancialYear', fy);
+        const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+        console.log('Currentmonth', currentMonth);
+        setLoading(true);
+        try {
+            const storedLoginID = await AsyncStorage.getItem('UserID');
+            console.log('UserID', storedLoginID);
+            const securityCode = await AsyncStorage.getItem('SecurityCode');
+            const url = API.FETCH_DASHBOARD_REPORT(
+                0,
+                storedLoginID,
+                fy,
+                currentMonth,
+                1,
+                3,
+                securityCode
+            );
+            console.log('URL', url);
+
+            const response = await axios.get(API.FETCH_DASHBOARD_REPORT(
+                0,
+                storedLoginID,
+                fy,
+                currentMonth,
+                1,
+                3,
+                securityCode
+
+            ));
+
+            console.log('Dashboard Report Response:', response);
+
+
+            if (response.data.responseStatus === true) {
+                setLoading(false);
+                const responseData = Array.isArray(response.data.responseData)
+                    ? response.data.responseData[0]
+                    : response.data.responseData;
+                const Total_Sales = responseData.Total_Sales || '';
+                const Delivery_Pending = responseData.Delivery_Pending || '';
+                const Ticket_Generated = responseData.Ticket_Generated || '';
+                setTotalSales(Total_Sales);
+                setDeliveryPending(Delivery_Pending);
+                setTicketGenerated(Ticket_Generated);
+
+
+            }
+        } catch (error) {
+            console.error('Error fetching attendance:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <SafeAreaProvider>
@@ -39,12 +193,13 @@ const CSRDashbaord = () => {
                         style={styles.topImage}
                         resizeMode="cover"
                     >
+                        {loading && <Loader />}
 
                         <ScrollView style={{ flex: 1 }}>
                             {/* Header */}
                             <View style={styles.header}>
                                 <Image source={require('../../asset/user.png')} style={styles.userIcon} />
-                                <Text style={styles.nameText}>SURINDAR SINGH CHOUHAN</Text>
+                                <Text style={styles.nameText}>Hi! {userName}</Text>
                             </View>
 
                             {/* Pie Chart */}
@@ -72,7 +227,7 @@ const CSRDashbaord = () => {
                                     <Image source={require('../../asset/totalsales-icon.png')} style={styles.iconimage} />
                                     <View style={{ flexDirection: 'column', alignItems: 'center', marginTop: 8 }}>
                                         <Text style={styles.cardTitle}>Total Sales</Text>
-                                        <Text style={styles.cardValue}>0</Text>
+                                        <Text style={styles.cardValue}>{totalSales}</Text>
                                     </View>
 
                                 </TouchableOpacity>
@@ -81,7 +236,7 @@ const CSRDashbaord = () => {
                                     <Image source={require('../../asset/ticketpending-icon.png')} style={styles.iconimage} />
                                     <View style={{ flexDirection: 'column', alignItems: 'center', marginTop: 8 }}>
                                         <Text style={styles.cardTitle}>Ticket Generated</Text>
-                                        <Text style={styles.cardValue}>20</Text>
+                                        <Text style={styles.cardValue}>{ticketGenerated}</Text>
                                     </View>
                                 </TouchableOpacity>
 
@@ -89,28 +244,28 @@ const CSRDashbaord = () => {
                                     <Image source={require('../../asset/delievrypending-icon.png')} style={styles.iconimage} />
                                     <View style={{ flexDirection: 'column', alignItems: 'center', marginTop: 8 }}>
                                         <Text style={styles.cardTitle}>Delivery Pending</Text>
-                                        <Text style={styles.cardValue}>30</Text>
+                                        <Text style={styles.cardValue}>{deliveryPending}</Text>
                                     </View>
                                 </TouchableOpacity>
                             </View>
 
                             <View style={styles.informationrow}>
-                                <Text style={styles.informationtitle}>Information</Text>
-                                <Text style={styles.informationvalue}>Attendance will be taken from one mobile device only</Text>
+                                <Text style={styles.informationtitle}>{notificationTitle}</Text>
+                                <Text style={styles.informationvalue}>{notification}</Text>
                             </View>
 
                             {/* Bottom Buttons */}
                             <View style={styles.bottomRow}>
-                                <TouchableOpacity 
-                                style={styles.bottomBtn}
-                                 onPress={() => navigation.navigate('SalesDashboard')}>
+                                <TouchableOpacity
+                                    style={styles.bottomBtn}
+                                    onPress={() => navigation.navigate('SalesDashboard')}>
                                     <Image source={require('../../asset/sales-enablement.gif')} style={styles.gifimage} />
                                     <Text style={styles.bottomText}>Sales Management</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.bottomBtn}
                                     onPress={() => navigation.navigate('CSRAttendanceDashboard')}>
-                                        <Image source={require('../../asset/attendance.gif')} style={styles.gifimage} />
+                                    <Image source={require('../../asset/attendance.gif')} style={styles.gifimage} />
                                     <Text style={styles.bottomText}>Attendance</Text>
                                 </TouchableOpacity>
                             </View>
@@ -122,14 +277,22 @@ const CSRDashbaord = () => {
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.bottomBtn}
-                                   >
-                                        <Image source={require('../../asset/more.gif')} style={styles.gifimage} />
+                                >
+                                    <Image source={require('../../asset/more.gif')} style={styles.gifimage} />
                                     <Text style={styles.bottomText}>View More</Text>
                                 </TouchableOpacity>
                             </View>
 
+                            <View style={styles.bottomRow}>
+                                <TouchableOpacity style={styles.bottomBtn} onPress={() => navigation.replace('LoginScreen')}>
+                                    <Image source={require('../../asset/logout.gif')} style={styles.gifimage} />
+                                    <Text style={styles.bottomText}>Logout</Text>
+                                </TouchableOpacity>
+
+                            </View>
+
                             <View style={{ height: 50 }} /> {/* Spacer at the bottom */}
-                            
+
                         </ScrollView>
 
 
@@ -196,12 +359,12 @@ const styles = StyleSheet.create({
     },
     bottomBtn: {
         width: 180,
-        paddingVertical:10,
+        paddingVertical: 10,
         backgroundColor: '#fff',
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        alignContent:'center',
+        alignContent: 'center',
         elevation: 5
     },
     bottomText: {
@@ -238,8 +401,8 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         textAlign: 'center',
     },
-    gifimage:{
-         width: 100,
+    gifimage: {
+        width: 100,
         height: 100,
     }
 });

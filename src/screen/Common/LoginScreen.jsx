@@ -82,14 +82,27 @@ const LoginScreen = () => {
                     ? res.data.responseData[0]
                     : res.data.responseData;
                 await AsyncStorage.setItem('UserName', responseData.UserName);
-                  await AsyncStorage.setItem('UserID', responseData.UserID);
-                   await AsyncStorage.setItem('LeaveURL', responseData.LeaveURL);
-                   await AsyncStorage.setItem('LeaveEncahURL', responseData.LeaveEncahURL);
-                   await AsyncStorage.setItem('SecurityCode',securityCode);
-                   await AsyncStorage.setItem('Password', responseData.Password);
-                   await AsyncStorage.setItem('ClientID', responseData.ClientID);
-                   await AsyncStorage.setItem('SalesPointID', responseData.SalesPointID);
-                navigation.replace('CSRDashbaord');
+                await AsyncStorage.setItem('UserID', responseData.UserID);
+                await AsyncStorage.setItem('LeaveURL', responseData.LeaveURL);
+                await AsyncStorage.setItem('LeaveEncahURL', responseData.LeaveEncahURL);
+                await AsyncStorage.setItem('SecurityCode', securityCode);
+                await AsyncStorage.setItem('Password', responseData.Password);
+                await AsyncStorage.setItem('ClientID', responseData.ClientID);
+                await AsyncStorage.setItem('SalesPointID', responseData.SalesPointID);
+                await AsyncStorage.setItem('UserTypeId', responseData.UserTypeId);
+                await AsyncStorage.setItem('Notify_Remarks', responseData.Notify_Remarks);
+                await AsyncStorage.setItem('Target', responseData.Target);
+                await AsyncStorage.setItem('Pending', responseData.Pending);
+                await AsyncStorage.setItem('MonthlyTarget', responseData.MonthlyTarget);
+                await AsyncStorage.setItem('Sold', responseData.Sold);
+                await AsyncStorage.setItem('Approved', responseData.Approved);
+                await AsyncStorage.setItem('Rejected', responseData.Rejected);
+                
+                if (responseData.UserTypeId === "IFBMM1000011") {
+                    navigation.replace("CSRDashbaord");
+                } else {
+                    navigation.replace("AttendanceDashboard");
+                }
             } else {
                 setLoading(false);
                 showToast(res.data.responseText);
@@ -212,7 +225,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '400',
         color: '#000000ff',
-        flex:1
+        flex: 1
 
     },
     iconBG: {

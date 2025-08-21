@@ -98,7 +98,7 @@ const Deliveryupdate = () => {
                     <Text style={styles.updateText}>Update Delivery Address</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelBtn}>
-                    <Text style={styles.cancelText}>Cancel</Text>
+                    <Text style={styles.cancelText}>Cancel Sale</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -191,7 +191,9 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3,
+        elevation: 5,
+         borderWidth: 1,
+        borderColor: "#21212133",
     },
     topImage: {
         height: '100%',
@@ -312,16 +314,19 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 4,
         alignItems: "center",
+        justifyContent:'center'
     },
     updateText: {
         color: "#fff",
         fontWeight: "600",
         fontSize: 14,
+        textAlign: 'center'
     },
     cancelText: {
         color: "#fff",
         fontWeight: "600",
         fontSize: 14,
+        textAlign: 'center'
     },
     itemRowiconbg: {
         height: 30,

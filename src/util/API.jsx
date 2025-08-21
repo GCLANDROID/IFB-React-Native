@@ -24,7 +24,7 @@ const API = {
       month
     )}&ReportType=${reportType}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
-    POST_ATTENDANCE: (loginID, password, clientID, securityCode, address, longitude, latitude) =>
+  POST_ATTENDANCE: (loginID, password, clientID, securityCode, address, longitude, latitude) =>
     `${BASE_URL}/postEmployeeAttendance?LoginID=${encodeURIComponent(
       loginID
     )}&password=${encodeURIComponent(
@@ -39,10 +39,19 @@ const API = {
       longitude
     )}&Latitude=${encodeURIComponent(latitude)}`,
 
-     POST_ATTENDANCE_WITH_SELFIE: `${BASE_URL}/post_EmployeeAttendanceWithSelfy_V2`,
+  POST_ATTENDANCE_WITH_SELFIE: `${BASE_URL}/post_EmployeeAttendanceWithSelfy_V2`,
+
+  FETCH_NOTIFICATION: (loginID, securityCode, reportType) =>
+    `${BASE_URL}/get_EmployeeNotificationInfo?AEMEmployeeID==${encodeURIComponent(
+      loginID
+    )}&SecurityCode=${securityCode}&Operation=${encodeURIComponent(reportType)}`,
+
+
+    FETCH_DASHBOARD_REPORT: (ReferenceNo, UserID, FinancialYear, Month, Operation, SubOperation, securityCode) =>
+  `${BASE_URL}/get_EmployeeSalesRefDetails?ReferenceNo=${encodeURIComponent(ReferenceNo)}&UserID=${encodeURIComponent(UserID)}&FinancialYear=${encodeURIComponent(FinancialYear)}&Month=${encodeURIComponent(Month)}&Operation=${encodeURIComponent(Operation)}&SubOperation=${encodeURIComponent(SubOperation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 };
 
-  // Add more endpoints here as needed
+// Add more endpoints here as needed
 
 
 export default API;

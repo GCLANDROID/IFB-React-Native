@@ -2,10 +2,10 @@
 import React, { useEffect, useState } from 'react';
 
 import {
-    View,
-    ImageBackground,
-    StyleSheet,
-    Image,
+  View,
+  ImageBackground,
+  StyleSheet,
+  Image,
 
 
 
@@ -16,62 +16,69 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const WelcomeScreen = () => {
-    const navigation = useNavigation()
+  const navigation = useNavigation()
 
 
-   useEffect(() => {
-  const checkLoginStatus = async () => {
-    try {
-      const storedUserID = await AsyncStorage.getItem('UserID');
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const storedUserID = await AsyncStorage.getItem('UserID');
 
-      if (!storedUserID || storedUserID === 'null' || storedUserID === '') {
-        navigation.replace('LoginScreen');
-      } else {
-        navigation.replace('CSRDashbaord');
+        if (!storedUserID || storedUserID === 'null' || storedUserID === '') {
+          navigation.replace('LoginScreen');
+        } else {
+
+          const userTypeId = await AsyncStorage.getItem('UserTypeId'); // ✅ fetch UserTypeId
+          if (userTypeId === "IFBMM1000011") {
+            navigation.replace('CSRDashbaord');
+          } else {
+            navigation.replace('AttendanceDashboard');
+          }
+          
+        }
+      } catch (error) {
+        console.error('Error reading UserID:', error);
+        navigation.replace('LoginScreen'); // fallback
       }
-    } catch (error) {
-      console.error('Error reading UserID:', error);
-      navigation.replace('LoginScreen'); // fallback
-    }
-  };
+    };
 
-  setTimeout(checkLoginStatus, 2000); // 2-second splash
+    setTimeout(checkLoginStatus, 2000); // 2-second splash
 
-}, []);
+  }, []);
 
 
 
 
-    return (
-        <View style={{ flex: 1 }}>
-            <ImageBackground
-                source={require('../../asset/splashimg.png')} // your top background image
-                style={styles.topImage}
-                resizeMode="cover"
-            >
-                <View style={{ alignItems: 'center', marginTop: 240 }}>
-                    <Image source={require('../../asset/loader.gif')} style={styles.loaderImage} />
-                </View>
-
-            </ImageBackground>
-
-
+  return (
+    <View style={{ flex: 1 }}>
+      <ImageBackground
+        source={require('../../asset/splashimg.png')} // your top background image
+        style={styles.topImage}
+        resizeMode="cover"
+      >
+        <View style={{ alignItems: 'center', marginTop: 240 }}>
+          <Image source={require('../../asset/loader.gif')} style={styles.loaderImage} />
         </View>
-    );
+
+      </ImageBackground>
+
+
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    topImage: {
-        height: '100%',
-        width: '100%',
+  topImage: {
+    height: '100%',
+    width: '100%',
 
-    },
+  },
 
-    loaderImage: {
-        height: 200,
-        width: 200,
+  loaderImage: {
+    height: 200,
+    width: 200,
 
-    },
+  },
 
 
 });
