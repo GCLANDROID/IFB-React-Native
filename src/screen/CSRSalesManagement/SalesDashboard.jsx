@@ -94,7 +94,7 @@ const SalesDashboard = () => {
 
                         <View style={{ flex: 1, justifyContent: 'center', padding: 20, alignContent: 'center', marginTop: 60 }}>
                             <View style={{ justifyContent: 'space-between', flexDirection: 'row', marginBottom: 20, alignContent: 'center' }}>
-                                <TouchableOpacity >
+                                <TouchableOpacity  >
                                     <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                                 <Text style={styles.nameText}>Sales Mangement</Text>
@@ -103,19 +103,19 @@ const SalesDashboard = () => {
                                 </TouchableOpacity>
                             </View>
                             <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
-                                <TouchableOpacity style={styles.card} >
+                                <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('SalesEntry')}>
                                     <Image source={require('../../asset/ecommerce.gif')} style={styles.menuICon}></Image>
-                                    <Text style={styles.menuTextText}> Sales{'\n'}Entry</Text>
+                                    <Text style={styles.menuTextText}> Sales Entry</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.card} >
+                                <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Deliveryupdate')}>
                                     <Image source={require('../../asset/scooter-icon.gif')} style={styles.menuICon}></Image>
-                                    <Text style={styles.menuTextText}>Delivery{'\n'}Update</Text>
+                                    <Text style={styles.menuTextText}>Delivery Update</Text>
                                 </TouchableOpacity>
                             </View>
                             <View style={{ flexDirection: 'row', alignSelf: 'center', marginTop: 20 }}>
                                 <TouchableOpacity style={styles.card} >
                                     <Image source={require('../../asset/pie-chart.gif')} style={styles.menuICon}></Image>
-                                    <Text style={styles.menuTextText}>Sales{'\n'}Report</Text>
+                                    <Text style={styles.menuTextText}>Sales Report</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={{
                                     height: 150,

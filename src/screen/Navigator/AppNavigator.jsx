@@ -14,6 +14,8 @@ import Dashboard from '../Dashboard/Dashboard';
 import CSRDashbaord from '../Dashboard/CSRDashbaord';
 import SalesDashboard from '../CSRSalesManagement/SalesDashboard';
 import CSRAttendanceDashboard from '../Attendance/CSRAttendanceDashboard';
+import SalesEntry from '../CSRSalesManagement/SalesEntry';
+import Deliveryupdate from '../CSRSalesManagement/Deliveryupdate';
 
 
 const Stack = createNativeStackNavigator();
@@ -34,6 +36,8 @@ const AppNavigator = () => {
         <Stack.Screen name="CSRDashbaord" component={CSRDashbaord} />
         <Stack.Screen name="SalesDashboard" component={SalesDashboard} />
         <Stack.Screen name="CSRAttendanceDashboard" component={CSRAttendanceDashboard} />
+        <Stack.Screen name="SalesEntry" component={SalesEntry} />
+        <Stack.Screen name="Deliveryupdate" component={Deliveryupdate} />
       </Stack.Navigator>
 
     </SafeAreaProvider>
