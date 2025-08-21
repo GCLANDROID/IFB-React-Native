@@ -103,7 +103,7 @@ const CSRAttendanceDashboard = () => {
                                 </TouchableOpacity>
                             </View>
                             <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
-                                <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('AttendanceManage')}>
+                                <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('CSRAttendanceManage')}>
                                     <Image source={require('../../asset/attendance-punch.png')} style={styles.menuICon}></Image>
                                     <Text style={styles.menuTextText}> Attendance{'\n'}Manage</Text>
                                 </TouchableOpacity>

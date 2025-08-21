@@ -38,6 +38,8 @@ const API = {
     )}&Longitude=${encodeURIComponent(
       longitude
     )}&Latitude=${encodeURIComponent(latitude)}`,
+
+     POST_ATTENDANCE_WITH_SELFIE: `${BASE_URL}/post_EmployeeAttendanceWithSelfy_V2`,
 };
 
   // Add more endpoints here as needed
