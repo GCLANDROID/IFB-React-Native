@@ -15,6 +15,7 @@ import {
     Linking,
     Modal,
     FlatList,
+    Alert,
 
 
 
@@ -33,14 +34,17 @@ const SalesEntry = () => {
     const [categoryModalVisible, setCategoryModalVisible] = useState(false);
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState("Please Select");
+    const [selectedCategoryID, setSelectedCategoryID] = useState("");
 
 
     const [titleModalVisible, setTitleModalVisible] = useState(false);
     const [titlw, setTitle] = useState([]);
     const [selectedTitle, setSelectedTitle] = useState("Please Select");
+    const [selectedTitleID, setSelectedTitleID] = useState("");
 
     const [exchangeModalVisible, setExchangeModalVisible] = useState(false);
     const [selectedExchange, setSelectedExchange] = useState("Please Select");
+    const [selectedExchangeID, setSelectedExchangeID] = useState("");
 
 
     const [financeModalVisible, setFinanceModalVisible] = useState(false);
@@ -51,17 +55,35 @@ const SalesEntry = () => {
     const [schemeModalVisible, setSchemeModalVisible] = useState(false);
     const [scheme, setScheme] = useState([]);
     const [selectedScheme, setSchemeFinance] = useState("Please Select");
+    const [selectedSchemeID, setSelectedSchemeID] = useState("0");
 
 
 
     const [modelModalVisible, setModelModalVisible] = useState(false);
     const [models, setModels] = useState([]);
     const [selectedModel, setSelectedModel] = useState("Please Select");
+    const [selectedModelID, setSelectedModelID] = useState("");
+
+    const [currentDate, setCurrentDate] = useState("");
+
+
+    const [monthName, setMonthName] = useState("");
+    const [financialYear, setFinancialYear] = useState("");
+
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [mobNumber, setMobNumber] = useState("");
+    const [mobile, setMobile] = useState("");
+    const [invoiceValue, setInvoiceValue] = useState("");
+    const [qty, setQty] = useState("");
+
+    const [otpModalVisible, setOtpModalVisible] = useState(false);
+    const [otp, setOtp] = useState("");
 
 
     const underExchange = [
         { id: "1", value: "Yes" },
-        { id: "2", value: "No" },
+        { id: "0", value: "No" },
 
     ];
 
@@ -69,6 +91,10 @@ const SalesEntry = () => {
         fetchScheme();
         fetchTitle();
         fetchCategories();
+        setCurrentDate(getCurrentDate());
+        const { monthName, financialYear } = getMonthAndFinancialYear();
+        setMonthName(monthName);
+        setFinancialYear(financialYear);
     }, []);
 
     const fetchCategories = async () => {
@@ -168,21 +194,60 @@ const SalesEntry = () => {
         }
     };
 
+    const getCurrentDate = () => {
+        const today = new Date();
+
+        const day = today.getDate().toString().padStart(2, '0'); // dd
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const month = monthNames[today.getMonth()]; // MMM
+        const year = today.getFullYear(); // yyyy
+
+        return `${day}-${month}-${year}`;
+    };
+
+
+    const getMonthAndFinancialYear = () => {
+        const today = new Date();
+
+        // 👉 Current Month Name
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"];
+        const monthName = monthNames[today.getMonth()];
+
+        // 👉 Financial Year
+        let year = today.getFullYear();
+        let financialYear = "";
+
+        if (today.getMonth() + 1 <= 3) {
+            // Jan, Feb, Mar → still in previous FY
+            financialYear = `${year - 1}-${year}`;
+        } else {
+            // Apr onwards → new FY
+            financialYear = `${year}-${year + 1}`;
+        }
+
+        return { monthName, financialYear };
+    };
+
 
     const handleCategorySelect = (item) => {
         setSelectedCategory(item.value);
         setCategoryModalVisible(false);
+        setSelectedCategoryID(item.id);
 
         fetchModels(item.id);
     };
 
     const handleTitleSelect = (item) => {
         setSelectedTitle(item.value);
+        setSelectedTitleID(item.id);
         setTitleModalVisible(false);
     };
 
     const handleExchnageSelect = (item) => {
         setSelectedExchange(item.value);
+        setSelectedExchangeID(item.id);
         setExchangeModalVisible(false);
     };
     const handleFinanceSelect = (item) => {
@@ -193,12 +258,14 @@ const SalesEntry = () => {
 
     const handleSchemeSelect = (item) => {
         setSchemeFinance(item.value);
+        setSelectedSchemeID(item.id);
         setSchemeModalVisible(false);
     };
 
 
     const handleModelSelect = (item) => {
         setSelectedModel(item.value);
+        setSelectedModelID(item.id);
         setModelModalVisible(false);
     };
 
@@ -222,9 +289,9 @@ const SalesEntry = () => {
     );
 
 
-    
 
-  const renderModelItem = ({ item }) => (
+
+    const renderModelItem = ({ item }) => (
         <TouchableOpacity
             style={styles.modalItem}
             onPress={() => handleModelSelect(item)}
@@ -263,6 +330,58 @@ const SalesEntry = () => {
             <Text style={styles.modalItemText}>{item.value}</Text>
         </TouchableOpacity>
     );
+
+    const handleChange = (text) => {
+        // allow only digits
+        const formatted = text.replace(/[^0-9]/g, "");
+        setMobile(formatted);
+
+        if (formatted.length === 10) {
+            checkMobile(formatted); // 🔥 hit API only when 10 digits entered
+        }
+    };
+
+    const checkMobile = async (number) => {
+        setLoading(true);
+        try {
+            const url = API.MOBILE_VALIDATION(
+                number
+
+            );
+            const response = await axios.get(url);
+
+            if (response.data?.responseStatus) {
+                setMobNumber(number);
+                setLoading(false);
+
+                // you can also set it in state if needed
+            } else {
+                setLoading(false);
+                Alert.alert("⚠️ Invalid", response.data?.responseText || "Invalid mobile number");
+
+                setMobile("");// clear input if invalid
+            }
+        } catch (error) {
+            setLoading(false);
+            Alert.alert("Error", "Something went wrong. Please try again.");
+            console.error(error);
+        }
+    };
+
+
+    const handleOTPSubmit = () => {
+        // 👉 Open OTP popup
+        setOtpModalVisible(true);
+    };
+
+    const handleVerifyOtp = () => {
+        if (otp === "123456") {
+            Alert.alert("✅ Code Verified Successfully!");
+            setOtpModalVisible(false);
+        } else {
+            Alert.alert("❌ Invalid OTP");
+        }
+    };
 
 
 
@@ -328,7 +447,12 @@ const SalesEntry = () => {
                                             First Name *
                                         </Text>
                                         <TouchableOpacity style={[styles.inputBox]}>
-                                            <TextInput placeholder='Enter First Name' style={styles.inputValue} placeholderTextColor={'#564F4F'} />
+                                            <TextInput
+                                                placeholder='Enter First Name'
+                                                style={styles.inputValue}
+                                                placeholderTextColor={'#564F4F'}
+                                                value={firstName}
+                                                onChangeText={setFirstName} />
                                         </TouchableOpacity>
                                     </View>
                                     <View style={styles.itemrow}>
@@ -336,7 +460,12 @@ const SalesEntry = () => {
                                             Last Name *
                                         </Text>
                                         <TouchableOpacity style={[styles.inputBox]}>
-                                            <TextInput placeholder='Enter Last Name' style={styles.inputValue} placeholderTextColor={'#564F4F'} />
+                                            <TextInput
+                                                placeholder='Enter Last Name'
+                                                style={styles.inputValue}
+                                                placeholderTextColor={'#564F4F'}
+                                                value={lastName}
+                                                onChangeText={setLastName} />
                                         </TouchableOpacity>
                                     </View>
 
@@ -351,6 +480,8 @@ const SalesEntry = () => {
                                                 placeholderTextColor={'#564F4F'}
                                                 keyboardType="numeric"
                                                 maxLength={10}
+                                                value={mobile}
+                                                onChangeText={handleChange}
                                             />
                                         </View>
                                     </View>
@@ -364,6 +495,14 @@ const SalesEntry = () => {
                                                 style={styles.inputValue}
                                                 placeholderTextColor={'#564F4F'}
                                                 keyboardType="numeric"
+                                                value={invoiceValue}
+                                                onChangeText={(text) => {
+                                                    if (text.includes(".")) {
+                                                        Alert.alert("⚠️ Invalid - Decimal values are not allowed");
+                                                        return;
+                                                    }
+                                                    setInvoiceValue(text); // ✅ only whole numbers
+                                                }}
                                             />
                                         </View>
                                     </View>
@@ -377,6 +516,16 @@ const SalesEntry = () => {
                                                 style={styles.inputValue}
                                                 placeholderTextColor={'#564F4F'}
                                                 keyboardType="numeric"
+                                                value={qty}
+                                                onChangeText={(text) => {
+                                                    const num = parseInt(text) || 0;
+
+                                                    if (num <= 5) {
+                                                        setQty(text); // valid input
+                                                    } else {
+                                                        Alert.alert("⚠️ Invalid - Quantity cannot be greater than 5");
+                                                    }
+                                                }}
                                             />
                                         </View>
                                     </View>
@@ -409,7 +558,7 @@ const SalesEntry = () => {
                                             </TouchableOpacity>
                                         </View>
                                     )}
-                                    <TouchableOpacity style={styles.submitbox}>
+                                    <TouchableOpacity style={styles.submitbox} onPress={handleOTPSubmit}>
                                         <Text style={styles.submitText}>
                                             Submit
                                         </Text>
@@ -564,7 +713,7 @@ const SalesEntry = () => {
                     </Modal>
 
 
-                     <Modal
+                    <Modal
                         visible={modelModalVisible}
                         animationType="slide"
                         transparent={true}
@@ -587,6 +736,39 @@ const SalesEntry = () => {
                                     onPress={() => setModelModalVisible(false)}
                                 >
                                     <Text style={styles.modalCloseText}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+
+
+                    {/* OTP Modal */}
+                    <Modal
+                        visible={otpModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        TouchableWithoutFeedback={() => setOtpModalVisible(false)}
+                        onRequestClose={() => setOtpModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalBox}>
+                                
+                                <Text style={styles.subText}>Enter Code Received</Text>
+
+                                <TextInput
+                                    style={styles.otpInput}
+                                    placeholder="Enter Code"
+                                    maxLength={7}
+                                    value={otp}
+                                    onChangeText={setOtp}
+                                />
+
+                                <TouchableOpacity style={styles.verifyBtn} onPress={handleVerifyOtp}>
+                                    <Text style={styles.verifyText}>Verify Code</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity onPress={() => Alert.alert("Code Resent!")}>
+                                    <Text style={styles.resendText}>Resend Code</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -739,7 +921,36 @@ const styles = StyleSheet.create({
     modalItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#ddd' },
     modalItemText: { fontSize: 14, color: '#333' },
     modalCloseButton: { marginTop: 15, padding: 10, backgroundColor: '#FF0020', borderRadius: 5 },
-    modalCloseText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' }
+    modalCloseText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
+
+     modalBox: {
+        backgroundColor: "#fff",
+        padding: 20,
+        borderRadius: 12,
+        width: "85%",
+        alignItems: "center",
+    },
+    subText: { fontSize: 14, marginBottom: 10 },
+    otpInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
+    width: "80%",
+    textAlign: "center",
+    fontSize: 18,
+    marginBottom: 15,
+    padding: 10,
+  },
+  verifyBtn: {
+    backgroundColor: "#1976D2",
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 10,
+    width: "60%",
+    alignItems: "center",
+  },
+  verifyText: { color: "#fff", fontWeight: "bold" },
+  resendText: { color: "#1976D2", marginTop: 5 },
 
 
 
