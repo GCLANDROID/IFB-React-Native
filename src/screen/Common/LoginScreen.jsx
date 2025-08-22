@@ -97,6 +97,7 @@ const LoginScreen = () => {
                 await AsyncStorage.setItem('Sold', responseData.Sold);
                 await AsyncStorage.setItem('Approved', responseData.Approved);
                 await AsyncStorage.setItem('Rejected', responseData.Rejected);
+                await AsyncStorage.setItem('BranchId', responseData.BranchId);
                 
                 if (responseData.UserTypeId === "IFBMM1000011") {
                     navigation.replace("CSRDashbaord");

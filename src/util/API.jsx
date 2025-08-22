@@ -47,8 +47,21 @@ const API = {
     )}&SecurityCode=${securityCode}&Operation=${encodeURIComponent(reportType)}`,
 
 
-    FETCH_DASHBOARD_REPORT: (ReferenceNo, UserID, FinancialYear, Month, Operation, SubOperation, securityCode) =>
-  `${BASE_URL}/get_EmployeeSalesRefDetails?ReferenceNo=${encodeURIComponent(ReferenceNo)}&UserID=${encodeURIComponent(UserID)}&FinancialYear=${encodeURIComponent(FinancialYear)}&Month=${encodeURIComponent(Month)}&Operation=${encodeURIComponent(Operation)}&SubOperation=${encodeURIComponent(SubOperation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+  FETCH_DASHBOARD_REPORT: (ReferenceNo, UserID, FinancialYear, Month, Operation, SubOperation, securityCode) =>
+    `${BASE_URL}/get_EmployeeSalesRefDetails?ReferenceNo=${encodeURIComponent(ReferenceNo)}&UserID=${encodeURIComponent(UserID)}&FinancialYear=${encodeURIComponent(FinancialYear)}&Month=${encodeURIComponent(Month)}&Operation=${encodeURIComponent(Operation)}&SubOperation=${encodeURIComponent(SubOperation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+  FETCH_CATEGORY: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
+    `${BASE_URL}/CommonDDL?ModuleNo=${encodeURIComponent(ModuleNo)}&ID=${encodeURIComponent(ID)}&ID1=${encodeURIComponent(ID1)}&ID2=${encodeURIComponent(ID2)}&ID3=${encodeURIComponent(ID3)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+  FETCH_TITLE: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
+    `${BASE_URL}/CommonDDL?ModuleNo=${encodeURIComponent(ModuleNo)}&ID=${encodeURIComponent(ID)}&ID1=${encodeURIComponent(ID1)}&ID2=${encodeURIComponent(ID2)}&ID3=${encodeURIComponent(ID3)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+  FETCH_FINANCIAL_SCHEME: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
+    `${BASE_URL}/CommonDDL?ModuleNo=${encodeURIComponent(ModuleNo)}&ID=${encodeURIComponent(ID)}&ID1=${encodeURIComponent(ID1)}&ID2=${encodeURIComponent(ID2)}&ID3=${encodeURIComponent(ID3)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+
+  FETCH_MODEL: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
+    `${BASE_URL}/CommonDDL?ModuleNo=${encodeURIComponent(ModuleNo)}&ID=${encodeURIComponent(ID)}&ID1=${encodeURIComponent(ID1)}&ID2=${encodeURIComponent(ID2)}&ID3=${encodeURIComponent(ID3)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 };
 
 // Add more endpoints here as needed
