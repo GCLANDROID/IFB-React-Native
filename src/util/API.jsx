@@ -65,6 +65,8 @@ const API = {
 
     MOBILE_VALIDATION: (MobileNo) =>
     `${BASE_URL}/CheckInvalidMobileNo?MobileNo=${encodeURIComponent(MobileNo)}`,
+    
+    POST_EMPLOYEE_SALES_MANAGE_V6: `${BASE_URL}/post_EmployeeSalesManageV6`,
 };
 
 // Add more endpoints here as needed

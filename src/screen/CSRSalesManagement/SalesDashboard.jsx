@@ -29,6 +29,8 @@ const SalesDashboard = () => {
     const [leaveURL, setLeaveURL] = useState('');
     const [leaveEncahURL, setLeaveEncahURL] = useState('');
 
+    
+
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -94,11 +96,11 @@ const SalesDashboard = () => {
 
                         <View style={{ flex: 1, justifyContent: 'center', padding: 20, alignContent: 'center', marginTop: 60 }}>
                             <View style={{ justifyContent: 'space-between', flexDirection: 'row', marginBottom: 20, alignContent: 'center' }}>
-                                <TouchableOpacity  >
+                                <TouchableOpacity  onPress={() => navigation.goBack()}>
                                     <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                                 <Text style={styles.nameText}>Sales Mangement</Text>
-                                <TouchableOpacity >
+                                <TouchableOpacity onPress={() => navigation.replace("CSRDashbaord")}>
                                     <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                             </View>

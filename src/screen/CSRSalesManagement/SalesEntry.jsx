@@ -81,6 +81,14 @@ const SalesEntry = () => {
     const [otp, setOtp] = useState("");
 
 
+    const [mrp, setMrp] = useState(0);
+
+    const [customerCode, setCustomerCode] = useState("");
+
+
+    const navigation = useNavigation();
+
+
     const underExchange = [
         { id: "1", value: "Yes" },
         { id: "0", value: "No" },
@@ -181,6 +189,7 @@ const SalesEntry = () => {
                 0,
                 securityCode
             );
+            console.log("Fetching models from URL:", url); // Debug log
 
             const response = await axios.get(url);
 
@@ -267,6 +276,11 @@ const SalesEntry = () => {
         setSelectedModel(item.value);
         setSelectedModelID(item.id);
         setModelModalVisible(false);
+
+        const match = item.value.match(/MRP\.\s*([\d.]+)/);
+        if (match) {
+            setMrp(parseFloat(match[1])); // e.g. 39500.00
+        }
     };
 
     // Separate render function
@@ -369,19 +383,179 @@ const SalesEntry = () => {
     };
 
 
-    const handleOTPSubmit = () => {
-        // 👉 Open OTP popup
-        setOtpModalVisible(true);
+    const handleOTPSubmit = async () => {
+        // ✅ Validation checks
+        if (!selectedCategoryID) {
+            Alert.alert("⚠️ Required", "Please select Category");
+            return;
+        }
+        if (!selectedModelID) {
+            Alert.alert("⚠️ Required", "Please select Model");
+            return;
+        }
+        if (!selectedTitleID) {
+            Alert.alert("⚠️ Required", "Please select Title");
+            return;
+        }
+        if (!firstName) {
+            Alert.alert("⚠️ Required", "Please enter First Name");
+            return;
+        }
+        if (!lastName) {
+            Alert.alert("⚠️ Required", "Please enter Last Name");
+            return;
+        }
+        if (!mobNumber) {
+            Alert.alert("⚠️ Required", "Please enter valid Mobile Number");
+            return;
+        }
+        if (!invoiceValue) {
+            Alert.alert("⚠️ Required", "Please enter Invoice Value");
+            return;
+        }
+        if (!qty) {
+            Alert.alert("⚠️ Required", "Please enter Quantity");
+            return;
+        }
+        if (!selectedExchangeID) {
+            Alert.alert("⚠️ Required", "Please select Under Exchange");
+            return;
+        }
+        if (!selectedSchemeID) {
+            Alert.alert("⚠️ Required", "Please select Finance Scheme");
+            return;
+        }
+
+        // ✅ If all good → open OTP popup
+        try {
+            setLoading(true);
+
+            const transNo = "0"; // replace if needed
+            const userId = await AsyncStorage.getItem("UserID");
+            console.log("UserId:", userId);
+            const branchId = await AsyncStorage.getItem("BranchId");
+            const securityCode = await AsyncStorage.getItem("SecurityCode");
+            const salesDate = currentDate;
+            const saleFlag = "1"; // adjust if needed
+
+            const formData = new FormData();
+            formData.append("TransNo", transNo);
+            formData.append("ReferenceNo", "0");
+            formData.append("AEMEmployeeID", userId);
+            formData.append("SalesDate", salesDate);
+            formData.append("FinancialYear", financialYear);
+            formData.append("Month", monthName);
+            formData.append("CategoryID", selectedCategoryID);
+            formData.append("Quantity", qty);
+            formData.append("UserID", userId);
+            formData.append("BranchID", branchId);
+            formData.append("ModelID", selectedModelID);
+            formData.append("CustomerName", `${firstName} ${lastName}`);
+            formData.append("CustomerPhNo", mobNumber);
+            formData.append("CustomerPinCode", "");
+            formData.append("CustomerEmail", "");
+            formData.append("InvoiceNo", "");
+            formData.append("FinanceScheme", selectedSchemeID);
+            formData.append("DeliveryAddress", "");
+            formData.append("FirstName", firstName);
+            formData.append("LastName", lastName);
+            formData.append("CustomerAlternateNumber", "");
+            formData.append("HouseNo", "");
+            formData.append("StreetName", "");
+            formData.append("Landmark", "");
+            formData.append("Title", selectedTitleID);
+            formData.append("StateID", "");
+            formData.append("City", "");
+            formData.append("InvoiceValue", invoiceValue);
+            formData.append("Remarks", "");
+            formData.append("UnderExchange", selectedExchangeID);
+            formData.append("Area", "");
+            formData.append("SalesEntryFlag", saleFlag);
+            formData.append("Invoicecopy", "");
+            formData.append("SerialNo", "");
+            formData.append("SerialNo1", "");
+            formData.append("InstallationBy", "");
+            formData.append("SalesType", "");
+            formData.append("WiFiDeviceStatus", "");
+            formData.append("Delivery_Date", "0");
+            formData.append("Delivery_Remarks", "0");
+            formData.append("Operation", "3");
+            formData.append("SubOperation", "1");
+            formData.append("DisplayMatrix_Sold", "");
+            formData.append("CSD_Sales", "");
+            formData.append("PedestalSales", "");
+            formData.append("SecurityCode", securityCode);
+
+            const response = await axios.post(API.POST_EMPLOYEE_SALES_MANAGE_V6, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (response.data?.responseStatus) {
+
+
+                const responseData = Array.isArray(response.data.responseData)
+                    ? response.data.responseData[0]
+                    : response.data.responseData;
+                const custCode = responseData.Cust_S_Code || "";
+                setCustomerCode(custCode);
+                console.log("Customer Code:", responseData.Cust_S_Code || "");
+                // ✅ Success → open OTP popup
+                sendOtp(mobNumber, qty, selectedCategory, invoiceValue,custCode);
+            } else {
+                Alert.alert("❌ Failed", response.data?.responseText || "Something went wrong");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Failed to submit sales entry");
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const sendOtp = async (mobNumber, qty, categoryName, invoiceValue, custCode) => {
+        try {
+            // 🧮 Calculate Amount
+            const amount = (parseInt(invoiceValue) || 0) * (parseInt(qty) || 0);
+
+            // 🔥 Generate OTP (6-digit random)
+
+
+            // ✅ Create SMS message
+            const message = `Welcome to the IFB family! Congratulations on becoming the proud owner of ${qty} IFB product - ${categoryName} for Rs. ${amount}. Kindly share the Purchase Verification code ${custCode} for product registration so we can initiate the process of delivery, installation, and warranty - The IFB Family Team`;
+
+            // Encode message
+            const query = encodeURIComponent(message);
+
+            // SMS API URL
+            const smsUrl = `http://smsapi.ifbhub.com/Sent?key=xpw6pSJJnTNr+AuEdVAQBHNhLxbM4eOmrRLnTN0PINs=&to=${mobNumber}&msg=${query}`;
+
+            const smsResponse = await axios.get(smsUrl);
+
+            if (smsResponse.data && smsResponse.data.toString().toLowerCase() === "true") {
+                // ✅ SMS sent → open OTP popup
+
+                setOtpModalVisible(true);
+            } else {
+                Alert.alert("❌ Failed", "OTP could not be sent. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error sending OTP:", error);
+            Alert.alert("❌ Error", "Something went wrong while sending OTP.");
+        }
     };
 
     const handleVerifyOtp = () => {
-        if (otp === "123456") {
+        if (otp === customerCode) {
             Alert.alert("✅ Code Verified Successfully!");
             setOtpModalVisible(false);
         } else {
-            Alert.alert("❌ Invalid OTP");
+            Alert.alert("❌ Invalid Code");
         }
     };
+
+
+
+
 
 
 
@@ -404,11 +578,11 @@ const SalesEntry = () => {
                         <ScrollView style={{ flex: 1 }}>
 
                             <View style={{ justifyContent: 'space-between', flexDirection: 'row', marginBottom: 20, alignContent: 'center', backgroundColor: '#FF0020', paddingVertical: 10, paddingHorizontal: 10 }}>
-                                <TouchableOpacity >
+                                <TouchableOpacity onPress={() => navigation.goBack()}>
                                     <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                                 <Text style={styles.nameText}>Sales Entry</Text>
-                                <TouchableOpacity >
+                                <TouchableOpacity onPress={() => navigation.replace("CSRDashbaord")}>
                                     <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                             </View>
@@ -452,7 +626,13 @@ const SalesEntry = () => {
                                                 style={styles.inputValue}
                                                 placeholderTextColor={'#564F4F'}
                                                 value={firstName}
-                                                onChangeText={setFirstName} />
+                                                onChangeText={(text) => {
+                                                    if (/^[A-Za-z.]*$/.test(text)) {
+                                                        setFirstName(text);
+                                                    } else {
+                                                        Alert.alert("⚠️ Invalid Input", "Only alphabets and '.' are allowed in First Name.");
+                                                    }
+                                                }} />
                                         </TouchableOpacity>
                                     </View>
                                     <View style={styles.itemrow}>
@@ -465,7 +645,13 @@ const SalesEntry = () => {
                                                 style={styles.inputValue}
                                                 placeholderTextColor={'#564F4F'}
                                                 value={lastName}
-                                                onChangeText={setLastName} />
+                                                onChangeText={(text) => {
+                                                    if (/^[A-Za-z.]*$/.test(text)) {
+                                                        setLastName(text);
+                                                    } else {
+                                                        Alert.alert("⚠️ Invalid Input", "Only alphabets and '.' are allowed in Last Name.");
+                                                    }
+                                                }} />
                                         </TouchableOpacity>
                                     </View>
 
@@ -480,8 +666,8 @@ const SalesEntry = () => {
                                                 placeholderTextColor={'#564F4F'}
                                                 keyboardType="numeric"
                                                 maxLength={10}
-                                                value={mobile}
-                                                onChangeText={handleChange}
+                                                value={mobNumber}
+                                                onChangeText={setMobNumber}
                                             />
                                         </View>
                                     </View>
@@ -497,11 +683,27 @@ const SalesEntry = () => {
                                                 keyboardType="numeric"
                                                 value={invoiceValue}
                                                 onChangeText={(text) => {
+                                                    // Just store input (but prevent decimals)
                                                     if (text.includes(".")) {
-                                                        Alert.alert("⚠️ Invalid - Decimal values are not allowed");
+                                                        Alert.alert("⚠️ Invalid", "Decimal values are not allowed");
                                                         return;
                                                     }
-                                                    setInvoiceValue(text); // ✅ only whole numbers
+                                                    setInvoiceValue(text);
+                                                }}
+                                                onEndEditing={() => {
+                                                    const num = parseInt(invoiceValue) || 0;
+
+                                                    if (mrp > 0) {
+                                                        if (num > mrp * 0.5 && num < mrp) {
+                                                            // ✅ Valid
+                                                        } else {
+                                                            Alert.alert(
+                                                                "⚠️ Invalid",
+                                                                `Invoice Value must be greater than 50% of MRP (${mrp * 0.5}) and less than MRP (${mrp})`
+                                                            );
+                                                            setInvoiceValue(""); // ❌ Clear invalid input
+                                                        }
+                                                    }
                                                 }}
                                             />
                                         </View>
@@ -523,7 +725,7 @@ const SalesEntry = () => {
                                                     if (num <= 5) {
                                                         setQty(text); // valid input
                                                     } else {
-                                                        Alert.alert("⚠️ Invalid - Quantity cannot be greater than 5");
+                                                        Alert.alert("⚠️ Invalid", "Quantity cannot be greater than 5");
                                                     }
                                                 }}
                                             />
@@ -752,7 +954,7 @@ const SalesEntry = () => {
                     >
                         <View style={styles.modalContainer}>
                             <View style={styles.modalBox}>
-                                
+
                                 <Text style={styles.subText}>Enter Code Received</Text>
 
                                 <TextInput
@@ -923,7 +1125,7 @@ const styles = StyleSheet.create({
     modalCloseButton: { marginTop: 15, padding: 10, backgroundColor: '#FF0020', borderRadius: 5 },
     modalCloseText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
 
-     modalBox: {
+    modalBox: {
         backgroundColor: "#fff",
         padding: 20,
         borderRadius: 12,
@@ -932,25 +1134,25 @@ const styles = StyleSheet.create({
     },
     subText: { fontSize: 14, marginBottom: 10 },
     otpInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    width: "80%",
-    textAlign: "center",
-    fontSize: 18,
-    marginBottom: 15,
-    padding: 10,
-  },
-  verifyBtn: {
-    backgroundColor: "#1976D2",
-    padding: 10,
-    borderRadius: 6,
-    marginBottom: 10,
-    width: "60%",
-    alignItems: "center",
-  },
-  verifyText: { color: "#fff", fontWeight: "bold" },
-  resendText: { color: "#1976D2", marginTop: 5 },
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 6,
+        width: "80%",
+        textAlign: "center",
+        fontSize: 18,
+        marginBottom: 15,
+        padding: 10,
+    },
+    verifyBtn: {
+        backgroundColor: "#000000ff",
+        padding: 10,
+        borderRadius: 6,
+        marginBottom: 10,
+        width: "60%",
+        alignItems: "center",
+    },
+    verifyText: { color: "#fff", fontWeight: "bold" },
+    resendText: { color: "#1976D2", marginTop: 5 },
 
 
 
