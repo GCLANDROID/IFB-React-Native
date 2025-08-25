@@ -65,8 +65,16 @@ const API = {
 
     MOBILE_VALIDATION: (MobileNo) =>
     `${BASE_URL}/CheckInvalidMobileNo?MobileNo=${encodeURIComponent(MobileNo)}`,
-    
+
     POST_EMPLOYEE_SALES_MANAGE_V6: `${BASE_URL}/post_EmployeeSalesManageV6`,
+
+    POST_OTP: (ReferenceNo, Status,  securityCode) =>
+    `${BASE_URL}/SalesCustomerSatisCodeUpdate?ReferenceNo=${encodeURIComponent(ReferenceNo)}&Status=${encodeURIComponent(Status)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+     INFORMATION_TOKEN_API: (ReferenceNo,  securityCode) =>
+    `${BASE_URL}/get_EmployeeSalesByReference?Reference=${encodeURIComponent(ReferenceNo)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+
 };
 
 // Add more endpoints here as needed

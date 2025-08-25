@@ -84,6 +84,7 @@ const SalesEntry = () => {
     const [mrp, setMrp] = useState(0);
 
     const [customerCode, setCustomerCode] = useState("");
+    const [refernceceNo, setrefernceceNo] = useState("");
 
 
     const navigation = useNavigation();
@@ -500,7 +501,10 @@ const SalesEntry = () => {
                 setCustomerCode(custCode);
                 console.log("Customer Code:", responseData.Cust_S_Code || "");
                 // ✅ Success → open OTP popup
-                sendOtp(mobNumber, qty, selectedCategory, invoiceValue,custCode);
+                sendOtp(mobNumber, qty, selectedCategory, invoiceValue, custCode);
+
+                const referenceNo = responseData.ReferenceNo || "";
+                setrefernceceNo(referenceNo);
             } else {
                 Alert.alert("❌ Failed", response.data?.responseText || "Something went wrong");
             }
@@ -546,10 +550,114 @@ const SalesEntry = () => {
 
     const handleVerifyOtp = () => {
         if (otp === customerCode) {
-            Alert.alert("✅ Code Verified Successfully!");
-            setOtpModalVisible(false);
+            verifyCustomerSatisCode(refernceceNo);
         } else {
             Alert.alert("❌ Invalid Code");
+        }
+    };
+
+
+    const verifyCustomerSatisCode = async (referenceNo) => {
+        try {
+            const securityCode = await AsyncStorage.getItem("SecurityCode");
+            const url = API.POST_OTP(
+                referenceNo,
+                1,
+                securityCode
+            );
+            console.log("Fetching models from URL:", url); // Debug log
+
+            const response = await axios.get(url);
+
+            if (response.data?.responseStatus) {
+                Alert.alert(
+                    "✅ Success",
+                    `Reference number ${referenceNo} generated successfully`
+                );
+                fetchSalesByReference(referenceNo, securityCode);
+
+                setOtpModalVisible(false);
+            } else {
+                Alert.alert("❌ Failed", response.data?.responseText || "Update failed");
+            }
+        } catch (error) {
+            console.error("Error verifying customer code:", error);
+            Alert.alert("Error", "Something went wrong while verifying OTP");
+        }
+    };
+
+
+    const fetchSalesByReference = async (referenceNo, securityCode) => {
+        setLoading(true);
+        try {
+            const url = API.INFORMATION_TOKEN_API(referenceNo, securityCode);
+            console.log("Fetching Sales by Reference URL:", url);
+
+            const response = await axios.get(url);
+            setLoading(false);
+
+            if (response.data?.responseStatus) {
+                setLoading(false);
+                const responseData = response.data.responseData;
+                if (Array.isArray(responseData) && responseData.length > 0) {
+                    const object = responseData[0];
+
+                    // ✅ Create JSON object
+                    const salesDetails = {
+                        TokenNo: object.ReferenceNo || "",
+                        CustomerName: object.CustomerName || "",
+                        MobileNo: object.MobileNo || "",
+                        Product: object.Product || "",
+                        PurchaseDate: object.PurchaseDate || "",
+                        Dealer: object.Dealer || "",
+                        CSRID: object.CSRID || "",
+                        State: object.State || "",
+                        MoreThanFifty: object.MoreThanFifty || ""
+                    };
+
+                    console.log("📦 Sales JSON:", salesDetails);
+
+                    await sendSalesJsonToApi(salesDetails);
+
+                    // 👉 Save in state if you want to use later
+                    // setSalesDetails(salesDetails);
+                }
+            } else {
+                setLoading(false);
+                Alert.alert("❌ Failed", response.data?.responseText || "No sales data found");
+            }
+        } catch (error) {
+            setLoading(false);
+            console.error("Error fetching sales by reference:", error);
+            Alert.alert("Error", "Something went wrong while fetching sales details");
+        }
+    };
+
+
+    const sendSalesJsonToApi = async (jsonObject) => {
+        setLoading(true);
+        try {
+            const credentials = "Genius:ifb@321";
+            const auth = "Basic " + Buffer.from(credentials).toString("base64");
+
+            const response = await axios.post(
+                "https://cc.ifbsupport.com/CSRSales/api/CSR",
+                jsonObject,
+                {
+                    headers: {
+                        "Authorization": auth,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            setLoading(false);
+            navigation.replace("SalesDashboard");
+
+
+        } catch (error) {
+            setLoading(false);
+            console.error("Error sending sales JSON:", error);
+            navigation.replace("SalesDashboard");
         }
     };
 
