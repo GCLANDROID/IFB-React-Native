@@ -14,6 +14,8 @@ import {
     TouchableOpacity,
     Linking,
     FlatList,
+    Modal,
+    Alert,
 
 
 
@@ -21,39 +23,90 @@ import {
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import dayjs from "dayjs";
+import API from '../../util/API';
+import { Loader } from '../../util/Loader';
 
 
 const Deliveryupdate = () => {
+    const [currentFY, setCurrentFY] = useState("");
+    const [currentMonth, setCurrentMonth] = useState("");
+    const [financialYears, setFinancialYears] = useState([]);
+    const [months, setMonths] = useState([]);
+
+    const [fyModalVisible, setfyModalVisible] = useState(false);
+    const [selectedFY, setSelectedFY] = useState("Please Select");
+
+    const [monthModalVisible, setMonthModalVisible] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState("Please Select");
+
+    const [deliveries, setDeliveries] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const now = dayjs();
+        const month = now.month() + 1; // Jan = 0
+        const year = now.year();
+
+        // Calculate financial year (April–March)
+        const fy = month <= 3 ? `${year - 1}-${year}` : `${year}-${year + 1}`;
+        const prevFY = month <= 3 ? `${year - 2}-${year - 1}` : `${year - 1}-${year}`;
+
+        // Store in array
+        setFinancialYears([fy, prevFY]);
+        setCurrentFY(fy);
+
+        const monthNames = [
+            "January", "February", "March",
+            "April", "May", "June",
+            "July", "August", "September",
+            "October", "November", "December"
+        ];
+        setMonths(monthNames);
+
+        // Current month text
+        setCurrentMonth(now.format("MMMM")); // e.g. "August"
+    }, []);
 
 
-    const deliveries = [
-        {
-            id: "1",
-            date: "01 Aug 2025",
-            reference: "IFB000089",
-            customer: "Dipjyoti Das",
-            product: "Air Conditioner",
-        },
-        {
-            id: "2",
-            date: "01 Aug 2025",
-            reference: "IFB000090",
-            customer: "John Smith",
-            product: "Washing Machine",
-        },
-         {
-            id: "3",
-            date: "03 Aug 2025",
-            reference: "IFB000190",
-            customer: "Aeo Smith",
-            product: "Washing Machine - FL",
-        },
-    ];
+    const handleFYSelect = (item) => {
+        setSelectedFY(item);
+
+        setfyModalVisible(false);
+    };
+
+    const renderFYItem = ({ item }) => (
+        <TouchableOpacity
+            style={styles.modalItem}
+            onPress={() => handleFYSelect(item)}
+        >
+            <Text style={styles.modalItemText}>{item}</Text>
+        </TouchableOpacity>
+    );
+
+
+    const handleMonthSelect = (item) => {
+        setSelectedMonth(item);
+
+        setMonthModalVisible(false);
+    };
+
+    const renderMonthItem = ({ item }) => (
+        <TouchableOpacity
+            style={styles.modalItem}
+            onPress={() => handleMonthSelect(item)}
+        >
+            <Text style={styles.modalItemText}>{item}</Text>
+        </TouchableOpacity>
+    );
+
+
+
 
     const renderItem = ({ item }) => (
         <View style={styles.card}>
             <View style={styles.row}>
-                <View style={{ flex: 1, flexDirection: 'row',alignItems:'center' }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                     <View style={styles.itemRowiconbg}>
                         <Image source={require('../../asset/date-icon.png')} style={styles.itemrowicon} />
                     </View>
@@ -63,33 +116,33 @@ const Deliveryupdate = () => {
                 <Text style={styles.value}>{item.date}</Text>
             </View>
             <View style={styles.row}>
-                <View style={{ flex: 1, flexDirection: 'row',alignItems:'center' }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                     <View style={styles.itemRowiconbg}>
                         <Image source={require('../../asset/reference-icon.png')} style={styles.itemrowicon} />
                     </View>
                     <Text style={styles.label}>Reference Number</Text>
                 </View>
-                
+
                 <Text style={styles.value}>{item.reference}</Text>
             </View>
             <View style={styles.row}>
-                <View style={{ flex: 1, flexDirection: 'row',alignItems:'center' }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                     <View style={styles.itemRowiconbg}>
                         <Image source={require('../../asset/cutomer-icon.png')} style={styles.itemrowicon} />
                     </View>
                     <Text style={styles.label}>Customer Name</Text>
                 </View>
-                
+
                 <Text style={styles.value}>{item.customer}</Text>
             </View>
             <View style={styles.row}>
-                <View style={{ flex: 1, flexDirection: 'row',alignItems:'center' }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                     <View style={styles.itemRowiconbg}>
                         <Image source={require('../../asset/product-icon.png')} style={styles.itemrowicon} />
                     </View>
                     <Text style={styles.label}>Product</Text>
                 </View>
-                
+
                 <Text style={styles.value}>{item.product}</Text>
             </View>
 
@@ -104,6 +157,55 @@ const Deliveryupdate = () => {
         </View>
     );
 
+    const fetchDeliveries = async () => {
+        if (selectedFY === "Please Select" || selectedMonth === "Please Select") {
+            Alert.alert("Please select Financial Year and Month");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const userID = await AsyncStorage.getItem('UserID');  // replace with your prefManager.getBranchId()
+            const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+            const url = API.GET_DELIVERY_ITEM(
+                "0",
+                userID,
+                selectedFY,
+                selectedMonth,
+                1,
+                1,
+                securityCode
+            );
+            console.log("Fetching models from URL:", url);
+            const response = await fetch(
+                url, {
+                method: 'GET', headers: { 'Content-Type': 'application/json' }
+            }
+            );
+            const json = await response.json();
+
+            if (json.responseStatus && json.responseData) {
+                const mapped = json.responseData.map((item, index) => ({
+                    id: index.toString(),
+                    date: item.SalesEntryDate || "-",
+                    reference: item.ReferenceNo || "-",
+                    customer: item.CustomerName || "-",
+                    product: item.ModelName || "-",
+                }));
+                setDeliveries(mapped);
+            } else {
+                Alert.alert("No data found");
+                setDeliveries([]);
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Failed to fetch data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
 
 
@@ -115,6 +217,7 @@ const Deliveryupdate = () => {
                     style={styles.topImage}
                     resizeMode="cover"
                 >
+                    {loading && <Loader />}
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                         style={{ flex: 1 }}
@@ -137,8 +240,8 @@ const Deliveryupdate = () => {
                                             <Text style={styles.titleText}>
                                                 Finanacial Year *
                                             </Text>
-                                            <TouchableOpacity style={styles.inputBox}>
-                                                <Text style={styles.inputValue}>Please Select</Text>
+                                            <TouchableOpacity style={styles.inputBox} onPress={() => setfyModalVisible(true)}>
+                                                <Text style={styles.inputValue}>{selectedFY}</Text>
                                                 <Image source={require('../../asset/dropdown-icon.png')} style={styles.inputboxicon} />
                                             </TouchableOpacity>
                                         </View>
@@ -146,13 +249,13 @@ const Deliveryupdate = () => {
                                             <Text style={styles.titleText}>
                                                 Month *
                                             </Text>
-                                            <TouchableOpacity style={styles.inputBox}>
-                                                <Text style={styles.inputValue}>Please Select</Text>
+                                            <TouchableOpacity style={styles.inputBox} onPress={() => setMonthModalVisible(true)}>
+                                                <Text style={styles.inputValue}>{selectedMonth}</Text>
                                                 <Image source={require('../../asset/dropdown-icon.png')} style={styles.inputboxicon} />
                                             </TouchableOpacity>
                                         </View>
                                     </View>
-                                    <TouchableOpacity style={styles.submitbox}>
+                                    <TouchableOpacity style={styles.submitbox} onPress={fetchDeliveries}>
                                         <Text style={styles.submitText}>Show</Text>
                                     </TouchableOpacity>
                                 </View>
@@ -169,6 +272,63 @@ const Deliveryupdate = () => {
 
                         </View>
                     </KeyboardAvoidingView>
+
+                    <Modal
+                        visible={monthModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setMonthModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Select Month</Text>
+
+
+                                <FlatList
+                                    data={months}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={renderMonthItem}
+                                />
+
+
+                                <TouchableOpacity
+                                    style={styles.modalCloseButton}
+                                    onPress={() => setMonthModalVisible(false)}
+                                >
+                                    <Text style={styles.modalCloseText}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+
+
+                    <Modal
+                        visible={fyModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setfyModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Select Financial Year</Text>
+
+
+                                <FlatList
+                                    data={financialYears}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={renderFYItem}
+                                />
+
+
+                                <TouchableOpacity
+                                    style={styles.modalCloseButton}
+                                    onPress={() => setfyModalVisible(false)}
+                                >
+                                    <Text style={styles.modalCloseText}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
                 </ImageBackground>
 
 
@@ -192,7 +352,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 5,
-         borderWidth: 1,
+        borderWidth: 1,
         borderColor: "#21212133",
     },
     topImage: {
@@ -314,7 +474,7 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 4,
         alignItems: "center",
-        justifyContent:'center'
+        justifyContent: 'center'
     },
     updateText: {
         color: "#fff",
@@ -342,7 +502,25 @@ const styles = StyleSheet.create({
         width: 15,
         alignSelf: 'center',
 
-    }
+    },
+    modalItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#ddd' },
+    modalItemText: { fontSize: 14, color: '#0a0a0aff' },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)'
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 10,
+        width: '80%',
+        maxHeight: '70%'
+    },
+    modalTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
+    modalCloseButton: { marginTop: 15, padding: 10, backgroundColor: '#FF0020', borderRadius: 5 },
+    modalCloseText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
 
 
 

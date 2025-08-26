@@ -74,6 +74,10 @@ const API = {
      INFORMATION_TOKEN_API: (ReferenceNo,  securityCode) =>
     `${BASE_URL}/get_EmployeeSalesByReference?Reference=${encodeURIComponent(ReferenceNo)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
+      GET_DELIVERY_ITEM: (ReferenceNo, UserID, FinancialYear,Month,Operation,SubOperation,securityCode) =>
+    `${BASE_URL}/getEmployeeReferenceSalesDelivery?ReferenceNo=${encodeURIComponent(ReferenceNo)}&UserID=${encodeURIComponent(UserID)}&FinancialYear=${encodeURIComponent(FinancialYear)}&Month=${encodeURIComponent(Month)}&Operation=${encodeURIComponent(Operation)}&SubOperation=${encodeURIComponent(SubOperation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+ 
 
 };
 
