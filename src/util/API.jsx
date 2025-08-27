@@ -77,6 +77,10 @@ const API = {
       GET_DELIVERY_ITEM: (ReferenceNo, UserID, FinancialYear,Month,Operation,SubOperation,securityCode) =>
     `${BASE_URL}/getEmployeeReferenceSalesDelivery?ReferenceNo=${encodeURIComponent(ReferenceNo)}&UserID=${encodeURIComponent(UserID)}&FinancialYear=${encodeURIComponent(FinancialYear)}&Month=${encodeURIComponent(Month)}&Operation=${encodeURIComponent(Operation)}&SubOperation=${encodeURIComponent(SubOperation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
+
+      COMMON_DDL: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
+    `${BASE_URL}/CommonDDL?ModuleNo=${encodeURIComponent(ModuleNo)}&ID=${encodeURIComponent(ID)}&ID1=${encodeURIComponent(ID1)}&ID2=${encodeURIComponent(ID2)}&ID3=${encodeURIComponent(ID3)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
  
 
 };

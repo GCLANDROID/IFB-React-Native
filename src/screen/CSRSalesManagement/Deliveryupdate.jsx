@@ -43,6 +43,8 @@ const Deliveryupdate = () => {
     const [deliveries, setDeliveries] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    const navigation = useNavigation()
+
     useEffect(() => {
         const now = dayjs();
         const month = now.month() + 1; // Jan = 0
@@ -147,7 +149,7 @@ const Deliveryupdate = () => {
             </View>
 
             <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.updateBtn}>
+                <TouchableOpacity style={styles.updateBtn}  onPress={() => navigation.replace("DeliveryupdateManage", { CategoryID: item.CategoryID })}>
                     <Text style={styles.updateText}>Update Delivery Address</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelBtn}>
@@ -192,6 +194,7 @@ const Deliveryupdate = () => {
                     reference: item.ReferenceNo || "-",
                     customer: item.CustomerName || "-",
                     product: item.ModelName || "-",
+                     CategoryID: item.CategoryID || "",
                 }));
                 setDeliveries(mapped);
             } else {
