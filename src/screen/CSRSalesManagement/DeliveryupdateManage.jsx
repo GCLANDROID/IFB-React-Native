@@ -16,7 +16,10 @@ import {
     FlatList,
     Modal,
     Alert,
-
+    Platform,
+    DatePickerAndroid,
+    DatePickerIOS,
+    PermissionsAndroid,
 
 
 
@@ -27,6 +30,11 @@ import dayjs from "dayjs";
 import API from '../../util/API';
 import { Loader } from '../../util/Loader';
 import { useRoute } from '@react-navigation/native';
+import { launchCamera } from 'react-native-image-picker';
+const daysInMonth = (month, year) => new Date(year, month, 0).getDate();
+
+
+
 
 
 const DeliveryupdateManage = () => {
@@ -34,6 +42,11 @@ const DeliveryupdateManage = () => {
     const [loading, setLoading] = useState(false);
     const route = useRoute();
     const { CategoryID } = route.params || {};
+    const { ReferenceNo } = route.params || {};
+    const { CustomerPhNo } = route.params || {};
+    const { FinanceScheme } = route.params || {};
+
+
     const [stateList, setStateList] = useState([]);
     const [selectedState, setSelectedState] = useState("");
     const [selectedStateID, setSelectedStateID] = useState("");
@@ -54,6 +67,56 @@ const DeliveryupdateManage = () => {
     const [displaySoldModalVisible, setDisplaySoldModalVisible] = useState(false);
 
 
+    const [selectedPedestal, setSelectedPedestal] = useState("");
+    const [selectedPedestalID, setSelectedPedestalID] = useState("");
+    const [pedestalModalVisible, setPedestalModalVisible] = useState(false);
+
+
+    const [installationList, setInstallationList] = useState([]);
+    const [selectedInstallation, setSelectedInstallation] = useState("");
+    const [selectedInstallationID, setSelectedInstallationID] = useState("");
+    const [installationModalVisible, setInstallationModalVisible] = useState(false);
+
+    const [deliveryDate, setDeliveryDate] = useState("");
+    const [saleDate, setSaleDate] = useState("");
+    const [showPicker, setShowPicker] = useState(false);
+
+    const [showPickerForSales, setShowPickerForSales] = useState(false);
+
+    const [capturedImage, setCapturedImage] = useState(null);
+
+
+    const [salesTypeList, setsalesTypeList] = useState([]);
+    const [selectedSalesType, setSelectedSalesType] = useState("");
+    const [selectedSalesTypeID, setSelectedSalesTypeID] = useState("");
+    const [salesTypeModalVisible, setSalesTypeModalVisible] = useState(false);
+
+
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const days = Array.from({ length: daysInMonth(month, year) }, (_, i) => i + 1);
+
+
+    console.log("ReferenceNo:", ReferenceNo);
+    console.log("CustomerPhNo:", CustomerPhNo);
+    console.log("FinanceScheme:", FinanceScheme);
+
+
+    const [customerEmail, setCustomerEmail] = useState("");
+    const [customerPincode, setCustomerPincode] = useState("");
+    const [customerLandmark, setCustomerLandmark] = useState("");
+    const [customerStreet, setCustomerStreet] = useState("");
+    const [customerHouseNo, setCustomerHouseNo] = useState("");
+
+
+
+
+
+
+
+
+
 
 
     const yesNoOptions = [
@@ -62,6 +125,9 @@ const DeliveryupdateManage = () => {
     ];
 
     useEffect(() => {
+        fetchSalesType();
+        fetchCustomerDetails();
+        fetchInstallation();
         fetchStates();
     }, []);
 
@@ -84,6 +150,86 @@ const DeliveryupdateManage = () => {
         } catch (err) {
             setLoading(false);
             console.error("Error fetching states:", err);
+        }
+    };
+
+
+    const fetchInstallation = async () => {
+        setLoading(true);
+        // Example security code, replace with actual if needed
+        try {
+            const securityCode = await AsyncStorage.getItem('SecurityCode');
+            const salesPartyCode = await AsyncStorage.getItem('SalesPartyCode');
+
+            const url = API.COMMON_DDL("717", salesPartyCode, "0", "0", "0", securityCode);
+            const res = await fetch(url);
+            const json = await res.json();
+            setLoading(false);
+            console.log("Installation API Response:", json);
+
+            if (json.responseStatus) {
+                setInstallationList(json.responseData);
+            }
+        } catch (err) {
+            setLoading(false);
+            console.error("Error fetching states:", err);
+        }
+    };
+
+    const fetchSalesType = async () => {
+        setLoading(true);
+        // Example security code, replace with actual if needed
+        try {
+            const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+            const url = API.COMMON_DDL("SISY", "0", "0", "0", "0", securityCode);
+            const res = await fetch(url);
+            const json = await res.json();
+            setLoading(false);
+            console.log("Installation SalesType Response:", json);
+
+            if (json.responseStatus) {
+                setsalesTypeList(json.responseData);
+            }
+        } catch (err) {
+            setLoading(false);
+            console.error("Error fetching states:", err);
+        }
+    };
+
+
+    const fetchCustomerDetails = async () => {
+        setLoading(true);
+        try {
+            const contactNumber = CustomerPhNo; // replace with route.params.contact or from storage
+
+            const url = `https://crmapi.ifbsupport.com/api/v1/customers/search?contact=${contactNumber}`;
+            console.log("Fetching customer details:", url);
+
+            const res = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer ZW55dXNlcjplbnl1JGVy", // add correct token if needed
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const json = await res.json();
+            console.log("Customer API Response:", json);
+            setLoading(false);
+
+            if (json && json.Data && json.Data.length > 0) {
+                const jobj = json.Data[0];
+
+                setCustomerEmail(jobj.zzemail || "");
+                setCustomerPincode(jobj.zzpost_code1 || "");
+                setCustomerLandmark(jobj.zzstr_suppl1 || "");
+                setCustomerStreet(jobj.zzstreet || "");
+                setCustomerHouseNo(jobj.House_num1 || "");
+            }
+        } catch (err) {
+            setLoading(false);
+            console.error("Error fetching customer details:", err);
         }
     };
 
@@ -177,14 +323,14 @@ const DeliveryupdateManage = () => {
     );
 
 
-     const handleDisplaySoldSelect = (item) => {
+    const handleDisplaySoldSelect = (item) => {
         setSelectedDisplaySold(item.Value);
         setSelectedDisplaySoldID(item.ID);
 
         setDisplaySoldModalVisible(false);
     };
 
-     const renderDisplaySoldItem = ({ item }) => (
+    const renderDisplaySoldItem = ({ item }) => (
         <TouchableOpacity
             style={styles.modalItem}
             onPress={() => handleDisplaySoldSelect(item)}
@@ -192,6 +338,156 @@ const DeliveryupdateManage = () => {
             <Text style={styles.modalItemText}>{item.Value}</Text>
         </TouchableOpacity>
     );
+
+
+    const handlePedestalSelect = (item) => {
+        setSelectedPedestal(item.Value);
+        setSelectedPedestalID(item.ID);
+
+        setPedestalModalVisible(false);
+    };
+
+    const renderPedestalItem = ({ item }) => (
+        <TouchableOpacity
+            style={styles.modalItem}
+            onPress={() => handlePedestalSelect(item)}
+        >
+            <Text style={styles.modalItemText}>{item.Value}</Text>
+        </TouchableOpacity>
+    );
+
+    const handleInstallationSelect = (item) => {
+        setSelectedInstallation(item.value);
+        setSelectedInstallationID(item.id);
+
+        setInstallationModalVisible(false);
+    };
+
+    const renderInstallationItem = ({ item }) => (
+        <TouchableOpacity
+            style={styles.modalItem}
+            onPress={() => handleInstallationSelect(item)}
+        >
+            <Text style={styles.modalItemText}>{item.value}</Text>
+        </TouchableOpacity>
+    );
+
+    const handleSalesTypeSelect = (item) => {
+        setSelectedSalesType(item.value);
+        setSelectedSalesTypeID(item.id);
+
+        setSalesTypeModalVisible(false);
+    };
+
+
+    const renderSalesTypeItem = ({ item }) => (
+        <TouchableOpacity
+            style={styles.modalItem}
+            onPress={() => handleSalesTypeSelect(item)}
+        >
+            <Text style={styles.modalItemText}>{item.value}</Text>
+        </TouchableOpacity>
+    );
+
+
+
+
+    const onSelectDay = (day) => {
+        const selected = `${day}-${month}-${year}`;
+        setDeliveryDate(selected);
+        setSaleDate(selected);
+        setShowPicker(false);
+    };
+
+    const onSelectDayForSales = (day) => {
+        const selected = `${day}-${month}-${year}`;
+        setSaleDate(selected);
+        setShowPickerForSales(false);
+    };
+
+
+    const requestCameraPermission = async () => {
+        if (Platform.OS === 'android') {
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.CAMERA,
+                    {
+                        title: 'Camera Permission',
+                        message: 'This app needs access to your camera to take attendance pictures.',
+                        buttonNeutral: 'Ask Me Later',
+                        buttonNegative: 'Cancel',
+                        buttonPositive: 'OK',
+                    }
+                );
+                return granted === PermissionsAndroid.RESULTS.GRANTED;
+            } catch (err) {
+                console.warn(err);
+                return false;
+            }
+        }
+        return true;
+    };
+    const openCamera = async () => {
+        const hasPermission = await requestCameraPermission();
+        if (!hasPermission) {
+            Alert.alert('Permission Denied', 'Camera permission is required to take a photo.');
+            return;
+        }
+
+        launchCamera(
+            {
+                mediaType: 'photo',
+                cameraType: 'back',
+                saveToPhotos: true,
+            },
+            (response) => {
+                if (response.didCancel) return;
+                if (response.errorCode) {
+                    console.log('Camera error:', response.errorMessage);
+                } else {
+                    const source = { uri: response.assets[0].uri };
+                    setCapturedImage(source);
+                }
+            }
+        );
+    };
+
+
+    const validateEmailAPI = async (email) => {
+        if (!email || !email.includes("@")) return; // basic check before hitting API
+
+        try {
+            setLoading(true);
+            const url = API.EMAIL_VALIDATION(
+                email
+
+            );
+            console.log("Checking Email Validity:", url);
+
+            const res = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const json = await res.json();
+            console.log("Email Validation Response:", json);
+
+            setLoading(false);
+
+            if ( json.responseStatus === false) {
+                Alert.alert("Invalid Email", "Please enter a valid email address.");
+                setCustomerEmail(""); // clear invalid email
+            }
+        } catch (err) {
+            setLoading(false);
+            console.error("Error validating email:", err);
+        }
+    };
+
+
+
 
 
 
@@ -227,8 +523,8 @@ const DeliveryupdateManage = () => {
                                     <Text style={styles.titleText}>
                                         Delivery Date
                                     </Text>
-                                    <TouchableOpacity style={styles.inputBox} >
-                                        <Text style={styles.inputValue}>MM/DD/YYYY</Text>
+                                    <TouchableOpacity style={styles.inputBox} onPress={() => setShowPicker(true)} >
+                                        <Text style={styles.inputValue}>{deliveryDate || "MM/DD/YYYY"}</Text>
                                         <Image source={require('../../asset/date.png')} style={styles.inputboxicon} />
                                     </TouchableOpacity>
                                 </View>
@@ -237,8 +533,8 @@ const DeliveryupdateManage = () => {
                                     <Text style={styles.titleText}>
                                         Sales date
                                     </Text>
-                                    <TouchableOpacity style={styles.inputBox} >
-                                        <Text style={styles.inputValue}>MM/DD/YYYY</Text>
+                                    <TouchableOpacity style={styles.inputBox} onPress={() => setShowPickerForSales(true)}>
+                                        <Text style={styles.inputValue}>{saleDate || "MM/DD/YYYY"}</Text>
                                         <Image source={require('../../asset/date.png')} style={styles.inputboxicon} />
                                     </TouchableOpacity>
                                 </View>
@@ -247,7 +543,7 @@ const DeliveryupdateManage = () => {
                                     <Text style={styles.titleText}>
                                         Remarks
                                     </Text>
-                                    <TouchableOpacity style={[styles.inputBox, { height: 100, alignItems: 'flex-start', paddingTop: 10 }]} >
+                                    <TouchableOpacity style={[styles.inputBox, { height: 60, alignItems: 'flex-start', paddingTop: 10 }]} >
                                         <TextInput
                                             multiline
                                             numberOfLines={4}
@@ -265,7 +561,9 @@ const DeliveryupdateManage = () => {
                                     </Text>
                                     <TouchableOpacity style={[styles.inputBox]} >
                                         <TextInput
-
+                                            value={customerEmail}
+                                            onChangeText={(text) => setCustomerEmail(text)}
+                                             onEndEditing={() => validateEmailAPI(customerEmail)}
                                             keyboardType='email-address'
                                             style={styles.inputValue}
                                             placeholderTextColor={'#564F4F'}
@@ -331,7 +629,8 @@ const DeliveryupdateManage = () => {
                                     </Text>
                                     <TouchableOpacity style={[styles.inputBox]} >
                                         <TextInput
-
+                                            value={customerHouseNo}
+                                            onChangeText={(text) => setCustomerHouseNo(text)}
                                             style={styles.inputValue}
                                             placeholderTextColor={'#564F4F'}
                                         />
@@ -347,7 +646,8 @@ const DeliveryupdateManage = () => {
                                     </Text>
                                     <TouchableOpacity style={[styles.inputBox]} >
                                         <TextInput
-
+                                            value={customerStreet}
+                                            onChangeText={(text) => setCustomerStreet(text)}
                                             style={styles.inputValue}
                                             placeholderTextColor={'#564F4F'}
                                         />
@@ -362,7 +662,8 @@ const DeliveryupdateManage = () => {
                                     </Text>
                                     <TouchableOpacity style={[styles.inputBox]} >
                                         <TextInput
-
+                                            value={customerLandmark}
+                                            onChangeText={(text) => setCustomerLandmark(text)}
                                             style={styles.inputValue}
                                             placeholderTextColor={'#564F4F'}
                                         />
@@ -390,8 +691,8 @@ const DeliveryupdateManage = () => {
                                         <Text style={styles.titleText}>
                                             Installation Type
                                         </Text>
-                                        <TouchableOpacity style={styles.inputBox} >
-                                            <Text style={styles.inputValue}>Please Select</Text>
+                                        <TouchableOpacity style={styles.inputBox} onPress={() => setInstallationModalVisible(true)}>
+                                            <Text style={styles.inputValue}>{selectedInstallation || "Please Select"}</Text>
                                             <Image source={require('../../asset/dropdown-icon.png')} style={styles.inputboxicon} />
                                         </TouchableOpacity>
                                     </View>
@@ -401,8 +702,8 @@ const DeliveryupdateManage = () => {
                                         <Text style={styles.titleText}>
                                             With Pedestal Sales
                                         </Text>
-                                        <TouchableOpacity style={styles.inputBox} >
-                                            <Text style={styles.inputValue}>Please Select</Text>
+                                        <TouchableOpacity style={styles.inputBox} onPress={() => setPedestalModalVisible(true)}>
+                                            <Text style={styles.inputValue}>{selectedPedestal || 'Please Select'}</Text>
                                             <Image source={require('../../asset/dropdown-icon.png')} style={styles.inputboxicon} />
                                         </TouchableOpacity>
                                     </View>
@@ -413,9 +714,7 @@ const DeliveryupdateManage = () => {
                                         <Text style={styles.titleText}>
                                             Serial / AC IDU Number
                                         </Text>
-                                        <TouchableOpacity >
-                                            <Image source={require('../../asset/scanner.png')} style={{ height: 25, width: 25, right: 20 }} />
-                                        </TouchableOpacity>
+
 
                                     </View>
 
@@ -435,17 +734,29 @@ const DeliveryupdateManage = () => {
                                         <Text style={styles.titleText}>
                                             Invoice Image
                                         </Text>
-                                        <TouchableOpacity >
+                                        <TouchableOpacity onPress={openCamera}>
                                             <Image source={require('../../asset/camera-icon.png')} style={{ height: 25, width: 25, right: 20 }} />
                                         </TouchableOpacity>
 
                                     </View>
 
                                     <View style={[styles.inputBox]} >
-                                        <Image source={require('../../asset/gallery-icon.png')} style={{ height: 50, width: 50 }} />
+                                        <Image source={capturedImage || require('../../asset/gallery-icon.png')} style={{ height: 50, width: 50 }} />
                                     </View>
 
                                 </View>
+                                {FinanceScheme !== "" && FinanceScheme !== "0" && (
+                                    <View style={styles.itemrow}>
+                                        <Text style={styles.titleText}>
+                                            Sales Type
+                                        </Text>
+                                        <TouchableOpacity style={styles.inputBox} onPress={() => setSalesTypeModalVisible(true)}>
+                                            <Text style={styles.inputValue}>{selectedSalesType || "Please Select"}</Text>
+                                            <Image source={require('../../asset/dropdown-icon.png')} style={styles.inputboxicon} />
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+
                                 <View style={styles.itemrow} >
                                     <Text style={styles.titleText}>
                                         CSD Sale
@@ -465,6 +776,12 @@ const DeliveryupdateManage = () => {
                                         <Image source={require('../../asset/dropdown-icon.png')} style={styles.inputboxicon} />
                                     </TouchableOpacity>
                                 </View>
+
+                                <TouchableOpacity style={styles.submitbox} >
+                                    <Text style={styles.submitText}>
+                                        Submit
+                                    </Text>
+                                </TouchableOpacity>
                                 <View style={{ height: 40 }}></View>
 
                             </ScrollView>
@@ -560,6 +877,172 @@ const DeliveryupdateManage = () => {
                         </View>
                     </Modal>
 
+
+                    <Modal
+                        visible={pedestalModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setPedestalModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Select Option</Text>
+
+
+                                <FlatList
+                                    data={yesNoOptions}
+                                    keyExtractor={(item) => item.ID}
+                                    renderItem={renderPedestalItem}
+                                />
+
+
+                                <TouchableOpacity
+                                    style={styles.modalCloseButton}
+                                    onPress={() => setPedestalModalVisible(false)}
+                                >
+                                    <Text style={styles.modalCloseText}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+
+
+                    <Modal
+                        visible={installationModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setInstallationModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Select Option</Text>
+
+
+                                <FlatList
+                                    data={installationList}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={renderInstallationItem}
+                                />
+
+
+                                <TouchableOpacity
+                                    style={styles.modalCloseButton}
+                                    onPress={() => setInstallationModalVisible(false)}
+                                >
+                                    <Text style={styles.modalCloseText}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+
+
+                    <Modal
+                        visible={salesTypeModalVisible}
+                        animationType="slide"
+                        transparent={true}
+                        onRequestClose={() => setSalesTypeModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Select Option</Text>
+
+
+                                <FlatList
+                                    data={salesTypeList}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={renderSalesTypeItem}
+                                />
+
+
+                                <TouchableOpacity
+                                    style={styles.modalCloseButton}
+                                    onPress={() => setSalesTypeModalVisible(false)}
+                                >
+                                    <Text style={styles.modalCloseText}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+
+
+                    <Modal visible={showPicker} transparent animationType="slide">
+                        <View style={{ flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+                            <View style={{ backgroundColor: "#fff", padding: 20, borderRadius: 10 }}>
+                                <Text style={{ textAlign: "center", marginBottom: 10 }}>
+                                    Select Delivery Date (future disabled)
+                                </Text>
+                                <FlatList
+                                    data={days}
+                                    numColumns={7}
+                                    keyExtractor={(item) => item.toString()}
+                                    renderItem={({ item }) => {
+                                        const isFuture = item > today.getDate();
+                                        return (
+                                            <TouchableOpacity
+                                                disabled={isFuture}
+                                                onPress={() => onSelectDay(item)}
+                                                style={{
+                                                    padding: 10,
+                                                    margin: 3,
+                                                    backgroundColor: isFuture ? "#ccc" : "#eee",
+                                                    borderRadius: 5,
+                                                }}
+                                            >
+                                                <Text style={{ color: isFuture ? "gray" : "black" }}>{item}</Text>
+                                            </TouchableOpacity>
+                                        );
+                                    }}
+                                />
+                                <TouchableOpacity onPress={() => setShowPicker(false)}>
+                                    <Text style={{ textAlign: "center", marginTop: 10, color: "blue" }}>Cancel</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+
+
+                    <Modal visible={showPickerForSales} transparent animationType="slide">
+                        <View style={{ flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+                            <View style={{ backgroundColor: "#fff", padding: 20, borderRadius: 10 }}>
+                                <Text style={{ textAlign: "center", marginBottom: 10 }}>
+                                    Select Sales Date (future disabled)
+                                </Text>
+                                <FlatList
+                                    data={days}
+                                    numColumns={7}
+                                    keyExtractor={(item) => item.toString()}
+                                    renderItem={({ item }) => {
+                                        const isFuture = item > today.getDate();
+                                        return (
+                                            <TouchableOpacity
+                                                disabled={isFuture}
+                                                onPress={() => onSelectDayForSales(item)}
+                                                style={{
+                                                    padding: 10,
+                                                    margin: 3,
+                                                    backgroundColor: isFuture ? "#ccc" : "#eee",
+                                                    borderRadius: 5,
+                                                }}
+                                            >
+                                                <Text style={{ color: isFuture ? "gray" : "black" }}>{item}</Text>
+                                            </TouchableOpacity>
+                                        );
+                                    }}
+                                />
+                                <TouchableOpacity onPress={() => setShowPicker(false)}>
+                                    <Text style={{ textAlign: "center", marginTop: 10, color: "blue" }}>Cancel</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+
+
+
+
+
+
+
+
                 </ImageBackground>
 
 
@@ -647,9 +1130,11 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
         alignItems: 'center',
-        marginTop: 20,
+        alignSelf: 'center',
+        justifyContent: 'center',
         height: 50,
-        width: '100%',
+        width: 200,
+        margin: 20
     },
     submitText: {
         fontSize: 18,

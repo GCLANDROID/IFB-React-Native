@@ -149,7 +149,7 @@ const Deliveryupdate = () => {
             </View>
 
             <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.updateBtn}  onPress={() => navigation.replace("DeliveryupdateManage", { CategoryID: item.CategoryID })}>
+                <TouchableOpacity style={styles.updateBtn}  onPress={() => navigation.replace("DeliveryupdateManage", { CategoryID: item.CategoryID, ReferenceNo: item.reference , CustomerPhNo: item.CustomerPhNo,FinanceScheme: item.FinanceScheme})}>
                     <Text style={styles.updateText}>Update Delivery Address</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelBtn}>
@@ -195,6 +195,8 @@ const Deliveryupdate = () => {
                     customer: item.CustomerName || "-",
                     product: item.ModelName || "-",
                      CategoryID: item.CategoryID || "",
+                     CustomerPhNo: item.CustomerPhNo || "",
+                     FinanceScheme: item.FinanceScheme || "",
                 }));
                 setDeliveries(mapped);
             } else {

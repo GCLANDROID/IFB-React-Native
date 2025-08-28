@@ -66,6 +66,9 @@ const API = {
     MOBILE_VALIDATION: (MobileNo) =>
     `${BASE_URL}/CheckInvalidMobileNo?MobileNo=${encodeURIComponent(MobileNo)}`,
 
+    EMAIL_VALIDATION: (EmailID) =>
+    `${BASE_URL}/CheckInvalidEmailID?EmailID=${encodeURIComponent(EmailID)}`,
+
     POST_EMPLOYEE_SALES_MANAGE_V6: `${BASE_URL}/post_EmployeeSalesManageV6`,
 
     POST_OTP: (ReferenceNo, Status,  securityCode) =>

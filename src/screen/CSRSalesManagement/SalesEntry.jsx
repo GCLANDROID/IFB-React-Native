@@ -373,6 +373,7 @@ const SalesEntry = () => {
             } else {
                 setLoading(false);
                 Alert.alert("⚠️ Invalid", response.data?.responseText || "Invalid mobile number");
+                 setMobNumber("");
 
                 setMobile("");// clear input if invalid
             }
@@ -776,6 +777,7 @@ const SalesEntry = () => {
                                                 maxLength={10}
                                                 value={mobNumber}
                                                 onChangeText={setMobNumber}
+                                                 onEndEditing={() => handleChange(mobNumber)}
                                             />
                                         </View>
                                     </View>
