@@ -31,6 +31,7 @@ import API from '../../util/API';
 import { Loader } from '../../util/Loader';
 import { useRoute } from '@react-navigation/native';
 import { launchCamera } from 'react-native-image-picker';
+import axios from 'axios';
 const daysInMonth = (month, year) => new Date(year, month, 0).getDate();
 
 
@@ -45,6 +46,17 @@ const DeliveryupdateManage = () => {
     const { ReferenceNo } = route.params || {};
     const { CustomerPhNo } = route.params || {};
     const { FinanceScheme } = route.params || {};
+    const { FinancialYear } = route.params || {};
+    const { Month } = route.params || {};
+    const { Quantity } = route.params || {};
+    const { ModelCode } = route.params || {};
+    const { CustomerName } = route.params || {};
+    const { DeliveryAddress } = route.params || {};
+    const { FirstName } = route.params || {};
+    const { LastName } = route.params || {};
+    const { InvoiceValue } = route.params || {};
+    const { UnderExchange } = route.params || {};
+    const { WiFiDeviceStatus } = route.params || {};
 
 
     const [stateList, setStateList] = useState([]);
@@ -101,6 +113,9 @@ const DeliveryupdateManage = () => {
     console.log("ReferenceNo:", ReferenceNo);
     console.log("CustomerPhNo:", CustomerPhNo);
     console.log("FinanceScheme:", FinanceScheme);
+    console.log("FinancialYear:", FinancialYear);
+    console.log("Month:", Month);
+    console.log("Quantity:", Quantity);
 
 
     const [customerEmail, setCustomerEmail] = useState("");
@@ -108,6 +123,11 @@ const DeliveryupdateManage = () => {
     const [customerLandmark, setCustomerLandmark] = useState("");
     const [customerStreet, setCustomerStreet] = useState("");
     const [customerHouseNo, setCustomerHouseNo] = useState("");
+
+    const [remarks, setRemarks] = useState("");
+    const [invoiceNumber, setInvoiceNumber] = useState("");
+    const [serialNo, setSerialNo] = useState("");
+    const [odUNumber, setOdUNumber] = useState("");
 
 
 
@@ -291,7 +311,7 @@ const DeliveryupdateManage = () => {
     };
 
     const handleAreaSelect = (item) => {
-        setSelectedArea(item.Value);
+        setSelectedArea(item);
 
         setAreaModalVisible(false);
     };
@@ -393,14 +413,14 @@ const DeliveryupdateManage = () => {
 
 
     const onSelectDay = (day) => {
-        const selected = `${day}-${month}-${year}`;
+        const selected = dayjs(new Date(year, month - 1, day)).format("DD-MMMM-YYYY");
         setDeliveryDate(selected);
         setSaleDate(selected);
         setShowPicker(false);
     };
 
     const onSelectDayForSales = (day) => {
-        const selected = `${day}-${month}-${year}`;
+        const selected = dayjs(new Date(year, month - 1, day)).format("DD-MMMM-YYYY");
         setSaleDate(selected);
         setShowPickerForSales(false);
     };
@@ -476,13 +496,170 @@ const DeliveryupdateManage = () => {
 
             setLoading(false);
 
-            if ( json.responseStatus === false) {
+            if (json.responseStatus === false) {
                 Alert.alert("Invalid Email", "Please enter a valid email address.");
                 setCustomerEmail(""); // clear invalid email
             }
         } catch (err) {
             setLoading(false);
             console.error("Error validating email:", err);
+        }
+    };
+
+
+    const validateForm = () => {
+        if (!deliveryDate) {
+            Alert.alert("Validation", "Please select Delivery Date");
+            return false;
+        }
+        if (!saleDate) {
+            Alert.alert("Validation", "Please select Sales Date");
+            return false;
+        }
+        if (!customerEmail || !customerEmail.includes("@")) {
+            Alert.alert("Validation", "Please enter a valid Email");
+            return false;
+        }
+        if (!pincode || pincode.length !== 6) {
+            Alert.alert("Validation", "Please enter a valid 6-digit Pincode");
+            return false;
+        }
+        if (!selectedStateID) {
+            Alert.alert("Validation", "Please select State");
+            return false;
+        }
+        if (!selectedCity) {
+            Alert.alert("Validation", "Please select City");
+            return false;
+        }
+        if (!selectedArea) {
+            Alert.alert("Validation", "Please select Area");
+            return false;
+        }
+        if (!customerHouseNo || customerHouseNo.trim() === "" || customerHouseNo.length < 3) {
+            Alert.alert("Validation", "Please enter House Number");
+            return false;
+        }
+        if (!customerStreet || customerStreet.trim() === "" || customerStreet.length < 3) {
+            Alert.alert("Validation", "Please enter Street Name");
+            return false;
+        }
+        if (!customerLandmark && customerLandmark.trim() === "" && customerLandmark.length < 3) {
+            Alert.alert("Validation", "Please enter Land Mark");
+            return false;
+        }
+
+
+        if (FinanceScheme !== "" && FinanceScheme !== "0" && !selectedSalesTypeID) {
+            Alert.alert("Validation", "Please select Sales Type");
+            return false;
+        }
+        if (!selectedCSDID) {
+            Alert.alert("Validation", "Please select CSD Sale option");
+            return false;
+        }
+        if (!selectedDisplaySoldID) {
+            Alert.alert("Validation", "Please select Display Matrix Sold option");
+            return false;
+        }
+
+
+        return true;
+    };
+
+    const handleSubmit = async () => {
+        if (!validateForm()) return;
+
+        try {
+            setLoading(true);
+
+            const userId = await AsyncStorage.getItem("UserID");
+            const branchId = await AsyncStorage.getItem("BranchId");
+            const securityCode = await AsyncStorage.getItem("SecurityCode");
+
+            const formData = new FormData();
+
+            formData.append("TransNo", "0");
+            formData.append("ReferenceNo", ReferenceNo);
+            formData.append("AEMEmployeeID", userId);
+            formData.append("SalesDate", saleDate);
+            formData.append("FinancialYear", FinancialYear);
+            formData.append("Month", Month);
+            formData.append("CategoryID", CategoryID);
+            formData.append("Quantity", Quantity);
+            formData.append("UserID", userId);
+            formData.append("BranchID", branchId);
+            formData.append("ModelID", ModelCode);
+            formData.append("CustomerName", CustomerName);
+            formData.append("CustomerPhNo", CustomerPhNo);
+            formData.append("CustomerPinCode", pincode);
+            formData.append("CustomerEmail", customerEmail);
+            formData.append("InvoiceNo", invoiceNumber);
+            formData.append("FinanceScheme", FinanceScheme || "0");
+            formData.append("DeliveryAddress", DeliveryAddress);
+            formData.append("FirstName", FirstName);
+            formData.append("LastName", LastName);
+            formData.append("CustomerAlternateNumber", "");
+            formData.append("HouseNo", customerHouseNo);
+            formData.append("StreetName", customerStreet);
+            formData.append("Landmark", customerLandmark);
+            formData.append("Title", "0");
+            formData.append("StateID", selectedStateID);
+            formData.append("City", selectedCity);
+            formData.append("InvoiceValue", InvoiceValue);
+            formData.append("Remarks", remarks);
+            formData.append("UnderExchange", UnderExchange||"N");
+            formData.append("Area", selectedArea);
+            formData.append("SalesEntryFlag", "1");
+            formData.append("SerialNo", serialNo);
+            formData.append("SerialNo1", odUNumber);
+            formData.append("InstallationBy", selectedInstallationID);
+            formData.append("SalesType", selectedSalesTypeID);
+            formData.append("WiFiDeviceStatus", WiFiDeviceStatus);
+            formData.append("Delivery_Date", deliveryDate);
+            formData.append("Delivery_Remarks", remarks);
+            formData.append("Operation", "3");
+            formData.append("SubOperation", "4");
+            formData.append("DisplayMatrix_Sold", selectedDisplaySoldID);
+            formData.append("CSD_Sales", selectedCSDID);
+            formData.append("PedestalSales", selectedPedestalID);
+            formData.append("SecurityCode", securityCode);
+
+            if (capturedImage && capturedImage.uri) {
+                const uri = capturedImage.uri;
+                const fileName = uri.split("/").pop();
+                const fileType = "image/jpeg"; // or detect dynamically
+
+                formData.append("Invoicecopy", {
+                    uri: uri,
+                    type: fileType,
+                    name: fileName || "invoice.jpg",
+                });
+            }
+            console.log("Submitting Form Data:", formData);
+
+            const res = await axios.post(
+                API.POST_EMPLOYEE_SALES_DELIVERY_UPDATE,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            console.log("Submit Response:", res.data);
+
+            if (res.data.responseStatus) {
+                Alert.alert("Success", "Data submitted successfully.");
+            } else {
+                Alert.alert("Failed", res.data.responseText || "Something went wrong");
+            }
+        } catch (err) {
+            console.error("Submit Error:", err);
+            Alert.alert("Error", "Failed to submit data.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -545,6 +722,8 @@ const DeliveryupdateManage = () => {
                                     </Text>
                                     <TouchableOpacity style={[styles.inputBox, { height: 60, alignItems: 'flex-start', paddingTop: 10 }]} >
                                         <TextInput
+                                            value={remarks}
+                                            onChangeText={(text) => setRemarks(text)}
                                             multiline
                                             numberOfLines={4}
                                             style={styles.inputValue}
@@ -563,7 +742,7 @@ const DeliveryupdateManage = () => {
                                         <TextInput
                                             value={customerEmail}
                                             onChangeText={(text) => setCustomerEmail(text)}
-                                             onEndEditing={() => validateEmailAPI(customerEmail)}
+                                            onEndEditing={() => validateEmailAPI(customerEmail)}
                                             keyboardType='email-address'
                                             style={styles.inputValue}
                                             placeholderTextColor={'#564F4F'}
@@ -678,7 +857,8 @@ const DeliveryupdateManage = () => {
                                     </Text>
                                     <TouchableOpacity style={[styles.inputBox]} >
                                         <TextInput
-
+                                            value={invoiceNumber}
+                                            onChangeText={(text) => setInvoiceNumber(text)}
                                             style={styles.inputValue}
                                             placeholderTextColor={'#564F4F'}
                                         />
@@ -720,7 +900,8 @@ const DeliveryupdateManage = () => {
 
                                     <TouchableOpacity style={[styles.inputBox]} >
                                         <TextInput
-
+                                            value={serialNo}
+                                            onChangeText={(text) => setSerialNo(text)}
                                             style={styles.inputValue}
                                             placeholderTextColor={'#564F4F'}
                                         />
@@ -728,6 +909,29 @@ const DeliveryupdateManage = () => {
 
 
                                 </View>
+
+                                {CategoryID === "IFBPC1000040" && (
+                                    <View style={styles.itemrow}>
+                                        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignContent: 'center' }}>
+                                            <Text style={styles.titleText}>
+                                                AC ODU Number
+                                            </Text>
+
+
+                                        </View>
+
+                                        <TouchableOpacity style={[styles.inputBox]} >
+                                            <TextInput
+                                                value={odUNumber}
+                                                onChangeText={(text) => setOdUNumber(text)}
+                                                style={styles.inputValue}
+                                                placeholderTextColor={'#564F4F'}
+                                            />
+                                        </TouchableOpacity>
+
+
+                                    </View>
+                                )}
 
                                 <View style={styles.itemrow}>
                                     <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignContent: 'center' }}>
@@ -777,7 +981,7 @@ const DeliveryupdateManage = () => {
                                     </TouchableOpacity>
                                 </View>
 
-                                <TouchableOpacity style={styles.submitbox} >
+                                <TouchableOpacity style={styles.submitbox} onPress={handleSubmit} >
                                     <Text style={styles.submitText}>
                                         Submit
                                     </Text>

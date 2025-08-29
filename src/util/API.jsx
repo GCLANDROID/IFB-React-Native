@@ -84,6 +84,7 @@ const API = {
       COMMON_DDL: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
     `${BASE_URL}/CommonDDL?ModuleNo=${encodeURIComponent(ModuleNo)}&ID=${encodeURIComponent(ID)}&ID1=${encodeURIComponent(ID1)}&ID2=${encodeURIComponent(ID2)}&ID3=${encodeURIComponent(ID3)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
+      POST_EMPLOYEE_SALES_DELIVERY_UPDATE: `${BASE_URL}/post_EmployeeSalesManageV7`,
  
 
 };

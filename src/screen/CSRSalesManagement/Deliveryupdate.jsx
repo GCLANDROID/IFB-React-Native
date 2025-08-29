@@ -149,7 +149,7 @@ const Deliveryupdate = () => {
             </View>
 
             <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.updateBtn}  onPress={() => navigation.replace("DeliveryupdateManage", { CategoryID: item.CategoryID, ReferenceNo: item.reference , CustomerPhNo: item.CustomerPhNo,FinanceScheme: item.FinanceScheme})}>
+                <TouchableOpacity style={styles.updateBtn}  onPress={() => navigation.replace("DeliveryupdateManage", { CategoryID: item.CategoryID, ReferenceNo: item.reference , CustomerPhNo: item.CustomerPhNo,FinanceScheme: item.FinanceScheme,FinancialYear:selectedFY,Month:selectedMonth,Quantity:item.Quantity,ModelCode:item.ModelCode,CustomerName:item.CustomerName,DeliveryAddress:item.DeliveryAddress,FirstName:item.FirstName,LastName:item.LastName,InvoiceValue:item.InvoiceValue,UnderExchange:item.UnderExchange,WiFiDeviceStatus:item.WiFiDeviceStatus})}>
                     <Text style={styles.updateText}>Update Delivery Address</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelBtn}>
@@ -197,6 +197,15 @@ const Deliveryupdate = () => {
                      CategoryID: item.CategoryID || "",
                      CustomerPhNo: item.CustomerPhNo || "",
                      FinanceScheme: item.FinanceScheme || "",
+                     Quantity: item.Quantity || "",
+                     ModelCode: item.ModelCode || "",
+                     CustomerName: item.CustomerName || "",
+                     DeliveryAddress: item.DeliveryAddress || "",
+                     FirstName: item.FirstName || "",
+                     LastName: item.LastName || "",
+                     InvoiceValue: item.InvoiceValue || "",
+                     UnderExchange: item.UnderExchange || "",
+                     WiFiDeviceStatus: item.WiFiDeviceStatus || "",
                 }));
                 setDeliveries(mapped);
             } else {

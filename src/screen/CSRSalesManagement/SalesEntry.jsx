@@ -488,6 +488,8 @@ const SalesEntry = () => {
             formData.append("PedestalSales", "");
             formData.append("SecurityCode", securityCode);
 
+            console.log("Submitting Form Data:", formData);
+
             const response = await axios.post(API.POST_EMPLOYEE_SALES_MANAGE_V6, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
@@ -777,7 +779,7 @@ const SalesEntry = () => {
                                                 maxLength={10}
                                                 value={mobNumber}
                                                 onChangeText={setMobNumber}
-                                                 onEndEditing={() => handleChange(mobNumber)}
+                                                //  onEndEditing={() => handleChange(mobNumber)}
                                             />
                                         </View>
                                     </View>
