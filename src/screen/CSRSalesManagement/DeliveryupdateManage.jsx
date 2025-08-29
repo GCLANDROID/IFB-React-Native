@@ -116,6 +116,7 @@ const DeliveryupdateManage = () => {
     console.log("FinancialYear:", FinancialYear);
     console.log("Month:", Month);
     console.log("Quantity:", Quantity);
+    console.log("UnderExchange:", UnderExchange);
 
 
     const [customerEmail, setCustomerEmail] = useState("");
@@ -128,6 +129,9 @@ const DeliveryupdateManage = () => {
     const [invoiceNumber, setInvoiceNumber] = useState("");
     const [serialNo, setSerialNo] = useState("");
     const [odUNumber, setOdUNumber] = useState("");
+
+    const [csrOBJ, setCsrOBJ] = useState({});
+    const [rcnList, setRcnList] = useState([]);
 
 
 
@@ -608,7 +612,7 @@ const DeliveryupdateManage = () => {
             formData.append("City", selectedCity);
             formData.append("InvoiceValue", InvoiceValue);
             formData.append("Remarks", remarks);
-            formData.append("UnderExchange", UnderExchange||"N");
+            formData.append("UnderExchange", UnderExchange || "0");
             formData.append("Area", selectedArea);
             formData.append("SalesEntryFlag", "1");
             formData.append("SerialNo", serialNo);
@@ -651,7 +655,7 @@ const DeliveryupdateManage = () => {
             console.log("Submit Response:", res.data);
 
             if (res.data.responseStatus) {
-                Alert.alert("Success", "Data submitted successfully.");
+                fetchDummyTokenByReference(securityCode);
             } else {
                 Alert.alert("Failed", res.data.responseText || "Something went wrong");
             }
@@ -662,6 +666,100 @@ const DeliveryupdateManage = () => {
             setLoading(false);
         }
     };
+
+    const fetchDummyTokenByReference = async (securityCode) => {
+        const Code = await AsyncStorage.getItem("Code");
+        setLoading(true);
+
+
+        try {
+            const res = await axios.get(API.GET_INFORMATION_TOKEN(ReferenceNo, securityCode));
+            const data = res.data;
+
+            setLoading(false);
+
+
+            let tempRcnList = [];
+
+    if (Array.isArray(data)) {
+      for (let object of data) {
+        await parseCSRObject(object, tempRcnList, setCsrOBJ);
+      }
+    } else if (data && Array.isArray(data.Data)) {
+      for (let object of data.Data) {
+        await parseCSRObject(object, tempRcnList, setCsrOBJ);
+      }
+    } else if (data && typeof data === "object") {
+      await parseCSRObject(data, tempRcnList, setCsrOBJ);
+    }
+
+    setRcnList(tempRcnList);
+        } catch (err) {
+            setLoading(false);
+            console.error("Error in fetchDummyTokenByReference:", err);
+        }
+    };
+
+    const parseCSRObject = async (object, tempRcnList, setCsrOBJ) => {
+        const TokenNo = object.TokenNo || "";
+        const CategoryShortName = object.CategoryShortName || "";
+        const SerialNo = object.SerialNo || "";
+        const ModelCode = object.ModelCode || "";
+        const FirstName = object.FirstName || "";
+        const LastName = object.LastName || "";
+        const DeliveryAddress = object.DeliveryAddress || "";
+        const StreetName = object.StreetName || "";
+        const CustomerPinCode = object.CustomerPinCode || "";
+        const City = object.City || "";
+        const StateName = object.StateName || "";
+        const SerialNo2 = object.SerialNo2 || "";
+        const CustomerPhNo = object.CustomerPhNo || "";
+        const AlternateNumber = object.AlternateNumber || "";
+        const CustomerEmail = object.CustomerEmail || "";
+        const SalesDate = object.SalesDate || "";
+        const ShipPartyCode = object.ShipPartyCode || "";
+        const MultipleProduct = object.MultipleProduct || "";
+        const installationBy = object.InstallationBy || "";
+        const WiFiDeviceStatus = object.WiFiDeviceStatus || "";
+        const RELIANCEFLAG = object.RELIANCEFLAG || "";
+
+        tempRcnList.push({
+            Token: TokenNo,
+            SerNumber: SerialNo,
+            ShortName: CategoryShortName,
+        });
+
+        const userCode = await AsyncStorage.getItem("UserCode");
+
+        setCsrOBJ({
+            MODEL: ModelCode,
+            PRODUCT: CategoryShortName,
+            CUSTOMERFIRSTNAME: FirstName,
+            CUSTOMERLASTNAME: LastName,
+            ADDRESS: DeliveryAddress,
+            STREET: StreetName,
+            PINCODE: CustomerPinCode,
+            CITY: City,
+            STATE: StateName,
+            MOBILENO: CustomerPhNo,
+            ALTMOBNO: AlternateNumber,
+            EMAIL: CustomerEmail,
+            PURCHASEDATE: SalesDate,
+            DEALER: ShipPartyCode,
+            TOKENNO: TokenNo,
+            CREATEDBY: userCode,
+            RELIANCEFRANCH: "",
+            RELIANCEFLAG: RELIANCEFLAG,
+            MULTIPLEQUANTITY: MultipleProduct,
+            TOKENCREATED: new Date().toISOString(),
+            INSTALLATIONBY: installationBy,
+            IDUSERIAL: SerialNo,
+            ODUSERIAL: SerialNo2,
+            WIFI: WiFiDeviceStatus,
+            FILECREATED: new Date().toISOString(),
+        });
+    };
+
 
 
 

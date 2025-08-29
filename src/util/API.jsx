@@ -63,29 +63,33 @@ const API = {
   FETCH_MODEL: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
     `${BASE_URL}/CommonDDL?ModuleNo=${encodeURIComponent(ModuleNo)}&ID=${encodeURIComponent(ID)}&ID1=${encodeURIComponent(ID1)}&ID2=${encodeURIComponent(ID2)}&ID3=${encodeURIComponent(ID3)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
-    MOBILE_VALIDATION: (MobileNo) =>
+  MOBILE_VALIDATION: (MobileNo) =>
     `${BASE_URL}/CheckInvalidMobileNo?MobileNo=${encodeURIComponent(MobileNo)}`,
 
-    EMAIL_VALIDATION: (EmailID) =>
+  EMAIL_VALIDATION: (EmailID) =>
     `${BASE_URL}/CheckInvalidEmailID?EmailID=${encodeURIComponent(EmailID)}`,
 
-    POST_EMPLOYEE_SALES_MANAGE_V6: `${BASE_URL}/post_EmployeeSalesManageV6`,
+  POST_EMPLOYEE_SALES_MANAGE_V6: `${BASE_URL}/post_EmployeeSalesManageV6`,
 
-    POST_OTP: (ReferenceNo, Status,  securityCode) =>
+  POST_OTP: (ReferenceNo, Status, securityCode) =>
     `${BASE_URL}/SalesCustomerSatisCodeUpdate?ReferenceNo=${encodeURIComponent(ReferenceNo)}&Status=${encodeURIComponent(Status)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
-     INFORMATION_TOKEN_API: (ReferenceNo,  securityCode) =>
+  INFORMATION_TOKEN_API: (ReferenceNo, securityCode) =>
     `${BASE_URL}/get_EmployeeSalesByReference?Reference=${encodeURIComponent(ReferenceNo)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
-      GET_DELIVERY_ITEM: (ReferenceNo, UserID, FinancialYear,Month,Operation,SubOperation,securityCode) =>
+  GET_DELIVERY_ITEM: (ReferenceNo, UserID, FinancialYear, Month, Operation, SubOperation, securityCode) =>
     `${BASE_URL}/getEmployeeReferenceSalesDelivery?ReferenceNo=${encodeURIComponent(ReferenceNo)}&UserID=${encodeURIComponent(UserID)}&FinancialYear=${encodeURIComponent(FinancialYear)}&Month=${encodeURIComponent(Month)}&Operation=${encodeURIComponent(Operation)}&SubOperation=${encodeURIComponent(SubOperation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
 
-      COMMON_DDL: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
+  COMMON_DDL: (ModuleNo, ID, ID1, ID2, ID3, securityCode) =>
     `${BASE_URL}/CommonDDL?ModuleNo=${encodeURIComponent(ModuleNo)}&ID=${encodeURIComponent(ID)}&ID1=${encodeURIComponent(ID1)}&ID2=${encodeURIComponent(ID2)}&ID3=${encodeURIComponent(ID3)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
-      POST_EMPLOYEE_SALES_DELIVERY_UPDATE: `${BASE_URL}/post_EmployeeSalesManageV7`,
- 
+  POST_EMPLOYEE_SALES_DELIVERY_UPDATE: `${BASE_URL}/post_EmployeeSalesManageV7`,
+
+  GET_INFORMATION_TOKEN: (ReferenceNo, securityCode) =>
+    `${BASE_URL}/get_CRMDummyTokenByReference?ReferenceNo=${encodeURIComponent(ReferenceNo)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+
 
 };
 

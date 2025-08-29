@@ -99,6 +99,8 @@ const LoginScreen = () => {
                 await AsyncStorage.setItem('Rejected', responseData.Rejected);
                 await AsyncStorage.setItem('BranchId', responseData.BranchId);
                 await AsyncStorage.setItem('SalesPartyCode', responseData.SalesPartyCode);
+                await AsyncStorage.setItem('Code', responseData.Code);
+                
                 
                 if (responseData.UserTypeId === "IFBMM1000011") {
                     navigation.replace("CSRDashbaord");
