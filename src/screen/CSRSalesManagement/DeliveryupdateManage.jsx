@@ -132,6 +132,7 @@ const DeliveryupdateManage = () => {
 
     const [csrOBJ, setCsrOBJ] = useState({});
     const [rcnList, setRcnList] = useState([]);
+    const navigation=useNavigation();
 
 
 
@@ -655,7 +656,9 @@ const DeliveryupdateManage = () => {
             console.log("Submit Response:", res.data);
 
             if (res.data.responseStatus) {
-                fetchDummyTokenByReference(securityCode);
+                Alert.alert("Succeess", res.data.responseText);
+                navigation.replace('SalesDashboard');
+                
             } else {
                 Alert.alert("Failed", res.data.responseText || "Something went wrong");
             }
