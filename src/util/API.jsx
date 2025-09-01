@@ -89,6 +89,8 @@ const API = {
   GET_INFORMATION_TOKEN: (ReferenceNo, securityCode) =>
     `${BASE_URL}/get_CRMDummyTokenByReference?ReferenceNo=${encodeURIComponent(ReferenceNo)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
+  GET_CONSOL_REPORT: (ReferenceNo, UserID,FinancialYear,Month,Operation,SubOperation,securityCode) =>
+    `${BASE_URL}/get_EmployeeSalesRefDetails?ReferenceNo=${encodeURIComponent(ReferenceNo)}&UserID=${encodeURIComponent(UserID)}&FinancialYear=${encodeURIComponent(FinancialYear)}&Month=${encodeURIComponent(Month)}&Operation=${encodeURIComponent(Operation)}&SubOperation=${encodeURIComponent(SubOperation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
 
 };

@@ -115,7 +115,7 @@ const SalesDashboard = () => {
                                 </TouchableOpacity>
                             </View>
                             <View style={{ flexDirection: 'row', alignSelf: 'center', marginTop: 20 }}>
-                                <TouchableOpacity style={styles.card} >
+                                <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('SalesReportDashboard')}>
                                     <Image source={require('../../asset/pie-chart.gif')} style={styles.menuICon}></Image>
                                     <Text style={styles.menuTextText}>Sales Report</Text>
                                 </TouchableOpacity>
