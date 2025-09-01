@@ -33,9 +33,9 @@ const SalesReportDashboard = () => {
     const [loading, setLoading] = useState(false);
     const navigation = useNavigation();
     const [currentFY, setCurrentFY] = useState("");
-     const [currentMonth, setCurrentMonth] = useState("");
+    const [currentMonth, setCurrentMonth] = useState("");
 
-      const [reportData, setReportData] = useState({
+    const [reportData, setReportData] = useState({
         Total_Sales: "0",
         Delivery_update: "0",
         Delivery_Pending: "0",
@@ -52,8 +52,8 @@ const SalesReportDashboard = () => {
             setLoading(true);
 
             const userId = await AsyncStorage.getItem("UserID");
-            const securityCode = await AsyncStorage.getItem("SecurityCode"); 
-            const url =API.GET_CONSOL_REPORT(
+            const securityCode = await AsyncStorage.getItem("SecurityCode");
+            const url = API.GET_CONSOL_REPORT(
                 "0",
                 userId,
                 financialYear,
@@ -62,11 +62,12 @@ const SalesReportDashboard = () => {
                 "3",
                 securityCode
             );
-               
+            console.log("URL", url);
+
             const response = await axios.get(url);
             console.log("API response:", response.data);
 
-            if ( response.data.responseData.length > 0) {
+            if (response.data.responseData.length > 0) {
                 const obj = response.data.responseData[0];
                 setReportData({
                     Total_Sales: obj.Total_Sales || "0",
@@ -101,27 +102,28 @@ const SalesReportDashboard = () => {
     ];
 
     useEffect(() => {
-            const now = dayjs();
-            const month = now.month() + 1; // Jan = 0
-            const year = now.year();
-    
-            // Calculate financial year (April–March)
-            const fy = month <= 3 ? `${year - 1}-${year}` : `${year}-${year + 1}`;
-            const prevFY = month <= 3 ? `${year - 2}-${year - 1}` : `${year - 1}-${year}`;
-    
-            // Store in array
-          
-            setCurrentFY(fy);
-    
-          
-    
-            // Current month text
-            setCurrentMonth(now.format("MMMM")); 
-            fetchSalesReport(fy, currentMonth);// e.g. "August"
-        }, []);
+        const now = dayjs();
+        const month = now.month() + 1; // Jan = 0
+        const year = now.year();
 
-        console.log("Current Month:", currentMonth);
-        console.log("Current Financial Year:", currentFY);
+        // Calculate financial year (April–March)
+        const fy = month <= 3 ? `${year - 1}-${year}` : `${year}-${year + 1}`;
+        const prevFY = month <= 3 ? `${year - 2}-${year - 1}` : `${year - 1}-${year}`;
+
+        // Store in array
+
+        setCurrentFY(fy);
+        const monthName = now.format("MMMM");
+
+
+
+        // Current month text
+        setCurrentMonth(now.format("MMMM"));
+        fetchSalesReport(fy, monthName);// e.g. "August"
+    }, []);
+
+    console.log("Current Month:", currentMonth);
+    console.log("Current Financial Year:", currentFY);
 
 
 
@@ -144,7 +146,7 @@ const SalesReportDashboard = () => {
                         style={{ flex: 1 }}
                     >
                         <ScrollView style={{ flex: 1 }}>
-                              {loading && <Loader />}
+                            {loading && <Loader />}
 
                             <View style={{ justifyContent: 'space-between', flexDirection: 'row', marginBottom: 20, alignContent: 'center', backgroundColor: '#FF0020', paddingVertical: 10, paddingHorizontal: 10 }}>
                                 <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -158,9 +160,38 @@ const SalesReportDashboard = () => {
 
                             <View style={{ flex: 1, padding: 20 }}>
                                 {data.map((item, index) => (
-                                    <TouchableOpacity key={index} style={styles.row}>
+                                    <TouchableOpacity key={index} style={styles.row}
+                                        onPress={() => {
+                                            const params = {
+                                                label: item.label,
+
+                                            };
+
+                                            // ✅ If "Total Sales", add subOperation
+                                            if (item.label === "Total Sales") {
+                                                params.subOperation = "1";
+                                            } else if (item.label === "Delivery Update") {
+                                                params.subOperation = "2";
+                                            }else if (item.label === "Delivery Pending") {
+                                                params.subOperation = "3";
+                                            }else if (item.label === "Token Generated") {
+                                                params.subOperation = "4";
+                                            }else if (item.label === "Ticket Generated") {
+                                                params.subOperation = "6";
+                                            }else if (item.label === "Ticket Pending") {
+                                                params.subOperation = "7";
+                                            }else if (item.label === "Ticket Approved") {
+                                                params.subOperation = "8";
+                                            }else if (item.label === "Ticket Rejected") {
+                                                params.subOperation = "9";
+                                            }else if (item.label === "Ticket Approval Pending") {
+                                                params.subOperation = "10";
+                                            }
+
+                                            navigation.navigate("SalesReportDetails", params);
+                                        }}>
                                         <Text style={styles.label}>{item.label}</Text>
-                                        
+
                                         <View style={styles.valueContainer}>
                                             <Text style={styles.value}>{item.value}</Text>
                                         </View>
@@ -228,7 +259,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 10.5,
         elevation: 10,
-         borderWidth: 1,
+        borderWidth: 1,
         borderColor: "#21212133",
     },
     value: {
