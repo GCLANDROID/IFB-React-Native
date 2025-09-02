@@ -788,11 +788,11 @@ const DeliveryupdateManage = () => {
                         <View style={{ flex: 1 }}>
 
                             <View style={{ justifyContent: 'space-between', flexDirection: 'row', alignContent: 'center', backgroundColor: '#FF0020', paddingVertical: 10, paddingHorizontal: 10 }}>
-                                <TouchableOpacity >
+                                <TouchableOpacity onPress={() => navigation.goBack()}>
                                     <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                                 <Text style={styles.nameText}>Delivery Update</Text>
-                                <TouchableOpacity >
+                                <TouchableOpacity onPress={() => navigation.replace("CSRDashbaord")}>
                                     <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                             </View>
