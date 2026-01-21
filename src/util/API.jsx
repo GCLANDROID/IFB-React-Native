@@ -2,7 +2,7 @@ const BASE_URL = 'https://nonfss.geniusconsultant.com/IFBiOSApi/api';
 
 const API = {
   LOGIN_GCL: (loginID, password, imei, securityCode, deviceID, deviceType) =>
-    `${BASE_URL}/GCLAuthenticateWithEncryption?LoginID=${encodeURIComponent(
+    `${BASE_URL}/GCLAuthenticateWithEncryptionV1?LoginID=${encodeURIComponent(
       loginID
     )}&password=${encodeURIComponent(
       password
@@ -91,6 +91,8 @@ const API = {
 
   GET_CONSOL_REPORT: (ReferenceNo, UserID,FinancialYear,Month,Operation,SubOperation,securityCode) =>
     `${BASE_URL}/get_EmployeeSalesRefDetails?ReferenceNo=${encodeURIComponent(ReferenceNo)}&UserID=${encodeURIComponent(UserID)}&FinancialYear=${encodeURIComponent(FinancialYear)}&Month=${encodeURIComponent(Month)}&Operation=${encodeURIComponent(Operation)}&SubOperation=${encodeURIComponent(SubOperation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+  DEVICE_CHANGE_REQUEST: `${BASE_URL}/post_EmployeeMobileIMEIChnageRequest`,
 
 
 };

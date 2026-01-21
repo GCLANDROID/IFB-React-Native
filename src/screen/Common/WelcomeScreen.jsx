@@ -30,9 +30,9 @@ const WelcomeScreen = () => {
 
           const userTypeId = await AsyncStorage.getItem('UserTypeId'); // ✅ fetch UserTypeId
           if (userTypeId === "IFBMM1000011") {
-            navigation.replace('CSRDashbaord');
+            navigation.replace('LoginScreen');
           } else {
-            navigation.replace('AttendanceDashboard');
+            navigation.replace('LoginScreen');
           }
           
         }

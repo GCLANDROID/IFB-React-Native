@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
+import DeviceInfo from 'react-native-device-info';
 
 import {
     View,
@@ -14,6 +15,7 @@ import {
     TouchableOpacity,
     Platform,
     Alert,
+    Modal,
 
 
 
@@ -41,6 +43,10 @@ const LoginScreen = () => {
     const [password, setPassword] = useState('');
     const [securityCode, setSecurityCode] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showDeviceModal, setShowDeviceModal] = useState(false);
+    const [showReasonModal, setShowReasonModal] = useState(false);
+    const [selectedReason, setSelectedReason] = useState('');
+    const [remarks, setRemarks] = useState('');
 
     const showToast = (msg) => {
         Alert.alert('Alert', msg);
@@ -63,9 +69,9 @@ const LoginScreen = () => {
         }
 
         try {
-            const android_id = 'I';
-            const refreshedToken = 'ABCD1234'; // Replace with actual token retrieval logic
-            const deviceID = 'device123'; // Replace with actual device ID retrieval logic
+            const android_id = await DeviceInfo.getUniqueId();;
+            const refreshedToken = await DeviceInfo.getUniqueId();; // Replace with actual token retrieval logic
+            const deviceID = await DeviceInfo.getUniqueId();; // Replace with actual device ID retrieval logic
             const version = Platform.OS;
 
             const base64Password = Buffer.from(password, 'utf-8').toString('base64');
@@ -100,8 +106,8 @@ const LoginScreen = () => {
                 await AsyncStorage.setItem('BranchId', responseData.BranchId);
                 await AsyncStorage.setItem('SalesPartyCode', responseData.SalesPartyCode);
                 await AsyncStorage.setItem('Code', responseData.Code);
-                
-                
+
+
                 if (responseData.UserTypeId === "IFBMM1000011") {
                     navigation.replace("CSRDashbaord");
                 } else {
@@ -109,12 +115,80 @@ const LoginScreen = () => {
                 }
             } else {
                 setLoading(false);
-                showToast(res.data.responseText);
+                const responseData = Array.isArray(res.data.responseData)
+                    ? res.data.responseData[0]
+                    : res.data.responseData;
+                if (responseData?.ErrorCode === '3') {
+
+                    setShowDeviceModal(true);
+                    return;
+                } else {
+                    showToast(responseData.Msg);
+                }
+
             }
         } catch (error) {
             setLoading(false);
             console.error('Login Error:', error);
             showToast('Something went wrong!');
+        }
+    };
+
+
+    const handleSendRequest = async () => {
+        if (!selectedReason) {
+            Alert.alert('Alert', 'Please select a reason');
+            return;
+        }
+
+        if (!remarks.trim()) {
+            Alert.alert('Alert', 'Please enter remarks');
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const imei = await DeviceInfo.getUniqueId();
+
+            const formData = new FormData();
+            formData.append('Code', userName);
+            formData.append('IMEI', imei);
+            formData.append('Reason', selectedReason);
+            formData.append('Remarks', remarks);
+            formData.append('SecurityCode', securityCode);
+
+            const response = await axios.post(
+                API.DEVICE_CHANGE_REQUEST,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            setLoading(false);
+
+            if (response.data?.responseStatus === true) {
+                Alert.alert('Success', response.data.responseText, [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            setShowDeviceModal(false); // close modal
+                            setSelectedReason('');
+                            setRemarks('');
+                        },
+                    },
+                ]);
+            } else {
+                Alert.alert('Alert', response.data?.responseText || 'Request failed');
+            }
+
+        } catch (error) {
+            setLoading(false);
+            console.error('Send Request Error:', error);
+            Alert.alert('Error', 'Something went wrong while sending request');
         }
     };
 
@@ -179,7 +253,111 @@ const LoginScreen = () => {
                 </KeyboardAvoidingView>
 
 
+                <Modal
+                    visible={showDeviceModal}
+                    transparent
+                    animationType="fade"
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
 
+                            {/* Close button */}
+                            <TouchableOpacity
+                                style={styles.closeButton}
+                                onPress={() => setShowDeviceModal(false)}
+                            >
+                                <Text style={styles.closeText}>X</Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.errorText}>
+                                Access denied. Device ID does not match the registered device.
+                                Please send a request to change your device.
+                            </Text>
+
+                            <Text style={styles.label}>Login ID :</Text>
+                            <TextInput style={styles.modalInput} value={userName} editable={false} />
+
+                            <Text style={styles.label}>Security Code :</Text>
+                            <TextInput style={styles.modalInput} value={securityCode} editable={false} />
+
+                            <Text style={styles.label}>Choose Reason for Change :</Text>
+                            <TouchableOpacity
+                                style={styles.dropdown}
+                                onPress={() => setShowReasonModal(true)}
+                            >
+                                <Text style={{ color: selectedReason ? '#000' : '#999' }}>
+                                    {selectedReason || 'Please Select'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            <Text style={styles.label}>Remarks :</Text>
+                            <TextInput
+                                style={[styles.modalInput, { height: 80 }]}
+                                placeholder="Enter Remarks"
+                                multiline
+                                value={remarks}
+                                onChangeText={setRemarks}
+                            />
+
+                            <TouchableOpacity style={styles.sendButton} onPress={handleSendRequest}>
+                                <Text style={styles.sendButtonText}>SEND REQUEST</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal
+                    visible={showReasonModal}
+                    transparent
+                    animationType="fade"
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.reasonModal}>
+
+                            <Text style={styles.reasonTitle}>Choose Reason</Text>
+
+                            <TouchableOpacity
+                                style={styles.reasonItem}
+                                onPress={() => {
+                                    setSelectedReason('My mobile phone was lost');
+                                    setRemarks('My mobile phone was lost');
+                                    setShowReasonModal(false);
+                                }}
+                            >
+                                <Text>My mobile phone was lost</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.reasonItem}
+                                onPress={() => {
+                                    setSelectedReason('I have changed my mobile phone');
+                                    setRemarks('I have changed my mobile phone');
+                                    setShowReasonModal(false);
+                                }}
+                            >
+                                <Text>I have changed my mobile phone</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.reasonItem}
+                                onPress={() => {
+                                    setSelectedReason('Others');
+                                    setShowReasonModal(false);
+                                    setRemarks('Others');
+                                }}
+                            >
+                                <Text>Others</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.cancelBtn}
+                                onPress={() => setShowReasonModal(false)}
+                            >
+                                <Text style={{ color: 'red' }}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
 
 
 
@@ -262,6 +440,101 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         color: '#FFFFFF',
 
+    },
+
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    modalContainer: {
+        width: '90%',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+    },
+
+    closeButton: {
+        position: 'absolute',
+        right: 10,
+        top: 10,
+        backgroundColor: 'red',
+        width: 30,
+        height: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    closeText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+
+    errorText: {
+        color: 'red',
+        fontSize: 16,
+        marginBottom: 15,
+        marginTop: 30,
+    },
+
+    label: {
+        fontSize: 14,
+        marginTop: 10,
+    },
+
+    modalInput: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 6,
+        padding: 10,
+        marginTop: 5,
+    },
+
+    dropdown: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 6,
+        padding: 12,
+        marginTop: 5,
+    },
+
+    sendButton: {
+        backgroundColor: 'red',
+        padding: 15,
+        borderRadius: 8,
+        marginTop: 20,
+        alignItems: 'center',
+    },
+
+    sendButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+
+    reasonModal: {
+        width: '85%',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+    },
+
+    reasonTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 15,
+    },
+
+    reasonItem: {
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+
+    cancelBtn: {
+        marginTop: 15,
+        alignItems: 'center',
     },
 
 
