@@ -24,6 +24,11 @@ const AttendanceManage = () => {
   const [capturedImage, setCapturedImage] = useState(null);
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
+  const [attendanceEnabled, setAttendanceEnabled] = useState(true);
+
+
+
+ 
 
   const requestCameraPermission = async () => {
     if (Platform.OS === 'android') {
@@ -72,6 +77,8 @@ const AttendanceManage = () => {
   };
 
   useEffect(() => {
+
+    
     const getLocation = async () => {
       try {
         if (Platform.OS === 'android') {
@@ -141,6 +148,7 @@ const AttendanceManage = () => {
     };
 
     getLocation();
+    
   }, []);
 
 

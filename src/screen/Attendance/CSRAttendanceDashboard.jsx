@@ -13,6 +13,7 @@ import {
     TextInput,
     TouchableOpacity,
     Linking,
+    Alert,
 
 
 
@@ -28,6 +29,12 @@ const CSRAttendanceDashboard = () => {
     const [userID, setUserID] = useState('');
     const [leaveURL, setLeaveURL] = useState('');
     const [leaveEncahURL, setLeaveEncahURL] = useState('');
+    const [overTime, setOverTime] = useState('');
+    const [checkInTime, setCheckInTime] = useState('');
+    const [minInHrs, setMinInHrs] = useState('');
+    const [minInMin, setMinInMin] = useState('');
+    const [minOutHrs, setMinOutHrs] = useState('');
+    const [minOutMin, setMinOutMin] = useState('');
 
     useEffect(() => {
         const loadData = async () => {
@@ -42,13 +49,65 @@ const CSRAttendanceDashboard = () => {
                 // setUserID(storedUserID || '');
                 setLeaveURL(storedLeaveURL || '');
                 setLeaveEncahURL(storedLeaveEncahURL || '');
+
+                const checkInTime = await AsyncStorage.getItem('checkInTime');
+                const overTime = await AsyncStorage.getItem('overTime');
+                setCheckInTime(checkInTime || '');
+                setOverTime(overTime || '');
+
+                const mih = await AsyncStorage.getItem('MINCheckinhrs');
+                const mim = await AsyncStorage.getItem('MINCheckinmin');
+                const moh = await AsyncStorage.getItem('MINCheckouthrs');
+                const mom = await AsyncStorage.getItem('MINCheckoutmin');
+
+                setMinInHrs(mih || '0');
+                setMinInMin(mim || '0');
+                setMinOutHrs(moh || '0');
+                setMinOutMin(mom || '0');
+                if (minInHrs !== '' && minInMin !== '') {
+                    validateAttendanceTime('IN');
+                }
+
+                if (minOutHrs !== '' && minOutMin !== '') {
+                    validateAttendanceTime('OUT');
+                }
+
             } catch (error) {
                 console.error('Error loading stored data:', error);
             }
         };
 
         loadData();
-    }, []);
+    }, [minInHrs, minInMin, minOutHrs, minOutMin]);
+
+
+
+    const validateAttendanceTime = (type) => {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        if (type === 'IN') {
+            const h = parseInt(minInHrs || '0', 10);
+            const m = parseInt(minInMin || '0', 10);
+            const minAllowed = h * 60 + m;
+
+            if (currentMinutes < minAllowed) {
+                const formatted = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                Alert.alert('Alert', `Check-in is allowed from ${formatted}`);
+            }
+        }
+
+        if (type === 'OUT') {
+            const h = parseInt(minOutHrs || '0', 10);
+            const m = parseInt(minOutMin || '0', 10);
+            const minAllowed = h * 60 + m;
+
+            if (currentMinutes < minAllowed) {
+                const formatted = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                Alert.alert('Alert', `Check-out is allowed from ${formatted}`);
+            }
+        }
+    };
 
 
     const openInBrowser = async (url) => {
@@ -102,14 +161,21 @@ const CSRAttendanceDashboard = () => {
                                     <Image source={require('../../asset/home-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                             </View>
+                            {checkInTime ? (
+                                <View style={[styles.attninformationrow, { backgroundColor: '#cbff0fe0' }]}>
+                                    <Text style={styles.attendanceTimeTitle}>Your stipulated shift duration is calculated as per the applicable working hours policy. Please ensure adherence to the defined shift timings in line with organisational guidelines</Text>
+                                    <Text style={styles.attendanceTime}>Check In time: {checkInTime} | Shiftover Time: {overTime}</Text>
+
+                                </View>
+                            ) : null}
                             <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
                                 <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('CSRAttendanceManage')}>
                                     <Image source={require('../../asset/attendance-punch.png')} style={styles.menuICon}></Image>
-                                    <Text style={styles.menuTextText}> Attendance{'\n'}Manage</Text>
+                                    <Text style={styles.menuTextText}> Check In{'\n'}/ Out</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('AttendanceReport')}>
                                     <Image source={require('../../asset/attendance-report.png')} style={styles.menuICon}></Image>
-                                    <Text style={styles.menuTextText}>Attendance{'\n'}Report</Text>
+                                    <Text style={styles.menuTextText}>Report</Text>
                                 </TouchableOpacity>
                             </View>
                             <View style={{ flexDirection: 'row', alignSelf: 'center', marginTop: 20 }}>
@@ -195,8 +261,28 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontWeight: 'bold',
         textAlign: 'center',
-       
-    }
+
+    },
+    attendanceTimeTitle: {
+        fontSize: 12,
+        color: '#000000',
+        fontWeight: '400',
+        textAlign: 'center',
+    },
+    attendanceTime: {
+        fontSize: 14,
+        color: '#0e0101',
+        fontWeight: '600',
+        textAlign: 'center',
+        marginTop: 5
+    },
+    attninformationrow: {
+
+        alignItems: 'center',
+        paddingVertical: 10,
+        marginVertical: 5
+
+    },
 
 
 

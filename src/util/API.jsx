@@ -95,6 +95,23 @@ const API = {
   DEVICE_CHANGE_REQUEST: `${BASE_URL}/post_EmployeeMobileIMEIChnageRequest`,
 
 
+  FETCH_LOGINTIME: (loginID,  securityCode) =>
+    `${BASE_URL}/SelfAttendanceToDay?LoginID=${encodeURIComponent(
+      loginID
+    )}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+
+    CHECK_REGULARIZE: (EmployeeID,  securityCode) =>
+    `${BASE_URL}/get_LoginCheck?EmployeeID=${encodeURIComponent(
+      EmployeeID
+    )}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+     POST_REGULARIZE: (LoginID,LoginDate,Remarks, Operation, securityCode) =>
+    `${BASE_URL}/post_RegulariseAttendance?LoginID=${encodeURIComponent(
+      LoginID
+    )}&LoginDate=${encodeURIComponent(LoginDate)}&Remarks=${encodeURIComponent(Remarks)}&Operation=${encodeURIComponent(Operation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
+
+
 };
 
 // Add more endpoints here as needed

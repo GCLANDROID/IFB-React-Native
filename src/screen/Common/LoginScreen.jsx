@@ -48,6 +48,29 @@ const LoginScreen = () => {
     const [selectedReason, setSelectedReason] = useState('');
     const [remarks, setRemarks] = useState('');
 
+    useEffect(() => {
+        loadData();
+    }, []);
+
+
+
+    const loadData = async () => {
+        try {
+            const storedUserId = await AsyncStorage.getItem('MasterID');
+            const storedPassword = await AsyncStorage.getItem('Password');
+            const storedSecurityCode = await AsyncStorage.getItem('SecurityCode');
+
+            setUserName(storedUserId || '');
+            setPassword(storedPassword || '');
+            setSecurityCode(storedSecurityCode || '');
+
+
+
+        } catch (error) {
+            console.error('Error loading login data:', error);
+        }
+    };
+
     const showToast = (msg) => {
         Alert.alert('Alert', msg);
     };
@@ -69,10 +92,13 @@ const LoginScreen = () => {
         }
 
         try {
-            const android_id = await DeviceInfo.getUniqueId();;
-            const refreshedToken = await DeviceInfo.getUniqueId();; // Replace with actual token retrieval logic
+            //  const android_id = await DeviceInfo.getUniqueId();;
+            //  const refreshedToken = await DeviceInfo.getUniqueId();; // Replace with actual token retrieval logic
             const deviceID = await DeviceInfo.getUniqueId();; // Replace with actual device ID retrieval logic
             const version = Platform.OS;
+            const android_id = "e45ebb02c6800641";
+            const refreshedToken = "e45ebb02c6800641";
+
 
             const base64Password = Buffer.from(password, 'utf-8').toString('base64');
             setLoading(true);
@@ -106,6 +132,13 @@ const LoginScreen = () => {
                 await AsyncStorage.setItem('BranchId', responseData.BranchId);
                 await AsyncStorage.setItem('SalesPartyCode', responseData.SalesPartyCode);
                 await AsyncStorage.setItem('Code', responseData.Code);
+                await AsyncStorage.setItem('MINCheckinhrs', String(responseData.MINCheckinhrs ?? ''));
+                await AsyncStorage.setItem('MINCheckinmin', String(responseData.MINCheckinmin ?? ''));
+                await AsyncStorage.setItem('MINCheckouthrs', String(responseData.MINCheckouthrs ?? ''));
+                await AsyncStorage.setItem('MINCheckoutmin', String(responseData.MINCheckoutmin ?? ''));
+                await AsyncStorage.setItem('MasterID', userName);        // entered UserID
+                await AsyncStorage.setItem('Password', password);      // entered Password
+                // entered Security Code
 
 
                 if (responseData.UserTypeId === "IFBMM1000011") {

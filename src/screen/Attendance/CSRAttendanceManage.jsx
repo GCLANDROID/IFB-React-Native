@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, PermissionsAndroid, Alert, Modal, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, PermissionsAndroid, Alert, Modal, StatusBar, TextInput } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Geocoder from 'react-native-geocoding';
 import Geolocation from '@react-native-community/geolocation';
@@ -12,6 +12,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API from '../../util/API';
 import { Loader } from '../../util/Loader';
+import DeviceInfo from 'react-native-device-info';
 
 Geocoder.init('AIzaSyBuxUn1s4S2yv8fqwd0wGUTFegxNyASL1g');
 
@@ -24,6 +25,15 @@ const CSRAttendanceManage = () => {
   const [capturedImage, setCapturedImage] = useState(null);
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
+  const [attendanceEnabled, setAttendanceEnabled] = useState(true);
+  const [forgotModalVisible, setForgotModalVisible] = useState(false);
+  const [forgotReason, setForgotReason] = useState('');
+  const [lastWorkingDate, setLastWorkingDate] = useState('');
+  const [shiftOverTime, setShiftOverTime] = useState('');
+  const [checkTime, setCheckTime] = useState('');
+  const [counterModalVisible, setCounterModalVisible] = useState(false);
+  const [workStatusFlag, setWorkStatusFlag] = useState('');
+  const [workStatus, setWorkStatus] = useState('Own Mapped Counter');
 
   const requestCameraPermission = async () => {
     if (Platform.OS === 'android') {
@@ -139,89 +149,294 @@ const CSRAttendanceManage = () => {
         console.warn('❌ Permission or location error:', err);
       }
     };
+    fetchTodayAttendance();
+    checkLoginStatus();
 
     getLocation();
   }, []);
 
 
-  const markAttendance = async () => {
-     if (!location) {
-    Alert.alert('Error', 'Location not available');
-    return;
-  }
-  if (!capturedImage) {
-    Alert.alert('Error', 'Please capture an image first.');
-    return;
-  }
-
-  try {
+  const checkLoginStatus = async () => {
     setLoading(true);
+    try {
+      const empId = await AsyncStorage.getItem('UserID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
 
-    // Fetch stored user/session data
-    const loginID = await AsyncStorage.getItem('UserID');
-    const password = await AsyncStorage.getItem('Password');
-    const clientID = await AsyncStorage.getItem('ClientID');
-    const securityCode = await AsyncStorage.getItem('SecurityCode');
+      const response = await axios.get(API.CHECK_REGULARIZE(
+        empId,
+        securityCode
 
-    const deviceName = Platform.OS; // Or use react-native-device-info
-    const counterid = await AsyncStorage.getItem('SalesPointID');
-    const workingStatus = "Own Mapped Counter";
-    
+      ));
 
-    // Create form data
-    const formData = new FormData();
-    formData.append("ClientID", clientID);
-    formData.append("LoginID", loginID);
-    formData.append("Password", password);
-    formData.append("Address", address);
-    formData.append("Longitude", location.longitude.toString());
-    formData.append("Latitude", location.latitude.toString());
-    formData.append("IMEI",  "123456");
-    formData.append("DeviceID",  "abc123");
-    formData.append("DeviceName", deviceName);
-    formData.append("SalesPoin_Longitude", "0");
-    formData.append("SalesPoint_Latitude", "0");
-    formData.append("Attendance_Distance_GAP", "0");
-    formData.append("SalesPointID", counterid || "0");
-    formData.append("Counter_Type", workingStatus || "NA");
-    formData.append("Counter_Type_Flag", "0");
-    formData.append("SecurityCode", securityCode);
+      console.log('LoginCheck Response:', response.data);
 
-    // Image file
-    formData.append("Imagefile", {
-      uri: capturedImage.uri,
-      name: "attendance.jpg",
-      type: "image/jpeg",
-    });
+      if (response.data?.responseData?.length > 0) {
+        const obj = response.data.responseData[0];
+        const returnVal = obj.ReturnVal;
+        const lastDate = obj.LastworkingDt;
+        setLastWorkingDate(lastDate);
 
-    const response = await axios.post(
-       API.POST_ATTENDANCE_WITH_SELFIE,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        if (returnVal === 22) {
+          setAttendanceEnabled(false);
+
+          Alert.alert(
+            'Alert',
+            `Checkout has not been recorded within the stipulated shift duration on ${lastDate}`,
+            [
+              { text: 'Forgot to Checkout', onPress: () => setForgotModalVisible(true), }
+            ]
+          );
+        }
+
+        else if (returnVal === 23) {
+          setAttendanceEnabled(false);
+
+          Alert.alert(
+            'Alert',
+            'You have repeatedly not marked check out and exceeded missed check-out regularisation limits.',
+            [
+              { text: 'I accept and Continue', onPress: () => setAttendanceEnabled(true) }
+            ]
+          );
+        }
+
+        else if (returnVal === 0) {
+          setAttendanceEnabled(true);
+        }
       }
-    );
 
-    setLoading(false);
-
-    if (response?.data?.responseStatus === true) {
-       Alert.alert("✅ Success", "Attendance marked successfully.", [
-    {
-      text: "OK",
-      onPress: () => navigation.replace("AttendanceReport"), // 👈 navigate to Report screen
-    },
-  ]);
-      setModalVisible(false);
-    } else {
-      Alert.alert("❌ Failed", response?.data?.responseText || "Failed to mark attendance.");
+    } catch (error) {
+      console.error('LoginCheck API error:', error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    setLoading(false);
-    console.error("API Error:", error);
-    Alert.alert("Error", "Something went wrong while marking attendance.");
-  }
+  };
+
+
+  const submitRegularise = async () => {
+    if (!forgotReason.trim()) {
+      Alert.alert('Alert', 'Please enter reason');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const loginID = await AsyncStorage.getItem('UserID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+
+
+      const response = await axios.get(API.POST_REGULARIZE(
+        loginID,
+        lastWorkingDate,
+        forgotReason,
+        1,
+        securityCode
+
+      ));
+
+      console.log('Regularise Response:', response.data);
+
+      if (response.data?.responseStatus === true) {
+        Alert.alert('Success', response.data.responseText || 'Request submitted');
+
+        setForgotModalVisible(false);
+        setForgotReason('');
+
+        // ✅ Call again after success
+        checkLoginStatus();
+      } else {
+        Alert.alert('Failed', response.data?.responseText || 'Request failed');
+      }
+
+    } catch (error) {
+      console.error('Regularise error:', error);
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const markAttendance = async (flagOverride, statusOverride) => {
+    if (!location) {
+      Alert.alert('Error', 'Location not available');
+      return;
+    }
+    if (!capturedImage) {
+      Alert.alert('Error', 'Please capture an image first.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Fetch stored user/session data
+      const loginID = await AsyncStorage.getItem('UserID');
+      const password = await AsyncStorage.getItem('Password');
+      const clientID = await AsyncStorage.getItem('ClientID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+      const deviceName = Platform.OS; // Or use react-native-device-info
+      const counterid = await AsyncStorage.getItem('SalesPointID');
+      const android_id = await DeviceInfo.getUniqueId();
+
+      const payload = {
+        ClientID: clientID,
+        LoginID: loginID,
+        Password: password,
+        Address: address,
+        Longitude: location.longitude,
+        Latitude: location.latitude,
+        IMEI: android_id,
+        DeviceID: android_id,
+        DeviceName: deviceName,
+        SalesPointID: counterid || "0",
+        Counter_Type: statusOverride || workStatus || "NA",
+        Counter_Type_Flag: flagOverride || workStatusFlag || "0",
+        SecurityCode: securityCode,
+      };
+
+      console.log("📦 Mark Attendance Payload:", payload);
+
+
+      // Create form data
+      const formData = new FormData();
+      formData.append("ClientID", clientID);
+      formData.append("LoginID", loginID);
+      formData.append("Password", password);
+      formData.append("Address", address);
+      formData.append("Longitude", location.longitude.toString());
+      formData.append("Latitude", location.latitude.toString());
+      formData.append("IMEI", android_id);
+      formData.append("DeviceID", android_id);
+      formData.append("DeviceName", deviceName);
+      formData.append("SalesPoin_Longitude", "0");
+      formData.append("SalesPoint_Latitude", "0");
+      formData.append("Attendance_Distance_GAP", "0");
+      formData.append("SalesPointID", counterid || "0");
+      formData.append("Counter_Type", statusOverride || workStatus || "NA");
+      formData.append("Counter_Type_Flag", flagOverride || workStatusFlag || "0");
+      formData.append("SecurityCode", securityCode);
+
+      // Image file
+      formData.append("Imagefile", {
+        uri: capturedImage.uri,
+        name: "attendance.jpg",
+        type: "image/jpeg",
+      });
+
+      const response = await axios.post(
+        API.POST_ATTENDANCE_WITH_SELFIE,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      setLoading(false);
+
+      if (response?.data?.responseStatus === true) {
+        Alert.alert("✅ Success", "Attendance marked successfully.", [
+          {
+            text: "OK",
+            onPress: () => navigation.replace("AttendanceReport"), // 👈 navigate to Report screen
+          },
+        ]);
+        setModalVisible(false);
+      } else {
+        const msg = response?.data?.responseText || '';
+
+        if (msg.toLowerCase().includes('counter area')) {
+          // ✅ Open special modal
+          setCounterModalVisible(true);
+        } else {
+          Alert.alert("❌ Failed", msg || "Failed to mark attendance.");
+        }
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error("API Error:", error);
+      Alert.alert("Error", "Something went wrong while marking attendance.");
+    }
+  };
+
+  const fetchTodayAttendance = async () => {
+    try {
+
+      const loginID = await AsyncStorage.getItem('UserID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+      const response = await axios.get(API.FETCH_LOGINTIME(
+        loginID,
+        securityCode
+
+      ));
+      console.log('TIME API response:', response);
+
+
+
+      if (response.data?.responseStatus === true) {
+        const data = Array.isArray(response.data.responseData)
+          ? response.data.responseData[0]
+          : response.data.responseData;
+
+        const checkInTime = data?.Time;
+
+        console.log('Check-in Time:', checkInTime); // debug
+
+        if (checkInTime) {
+          setCheckTime(checkInTime);
+          const overtime = calculateShiftOverTime(checkInTime);
+          await AsyncStorage.setItem('checkInTime', checkInTime);
+          await AsyncStorage.setItem('overTime', overtime);
+        } else {
+          await AsyncStorage.setItem('checkInTime', "");
+          await AsyncStorage.setItem('overTime', "");
+        }
+      }
+
+
+    } catch (err) {
+      console.log('Attendance API error:', err);
+    } finally {
+
+    }
+  };
+
+
+  const calculateShiftOverTime = (timeStr) => {
+    try {
+      if (!timeStr) return '';
+
+      // Supports "10:15" or "10:15:00"
+      const parts = timeStr.split(':');
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+
+      if (isNaN(hours) || isNaN(minutes)) return '';
+
+      const date = new Date();
+      date.setHours(hours);
+      date.setMinutes(minutes);
+      date.setSeconds(0);
+
+      // Add 9 hours shift
+      date.setHours(date.getHours() + 9);
+
+      // Format nicely (07:15 PM)
+      return date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } catch (e) {
+      console.log('Time parse error:', e);
+      return '';
+    }
   };
 
 
@@ -270,13 +485,60 @@ const CSRAttendanceManage = () => {
               </View>
 
               {/* Fingerprint + Attendance Text */}
-              <TouchableOpacity style={styles.fingerprintContainer}  onPress={() => setModalVisible(true)}>
-                <Image
-                  source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
-                  style={styles.fingerprint}
-                />
-                <Text style={styles.attendanceText}>Mark{'\n'}Your Attendance</Text>
-              </TouchableOpacity>
+
+              {!checkTime ? (
+                <TouchableOpacity
+                  style={[
+                    styles.fingerprintContainer,
+                    { opacity: attendanceEnabled ? 1 : 0.4 }
+                  ]}
+                  onPress={() => {
+                    if (!attendanceEnabled) {
+                      Alert.alert(
+                        'Alert',
+                        'Previous day attendance must be regularized before today’s check-in.',
+                        [{ text: 'OK' }]
+                      );
+                      return;
+                    }
+
+                    setModalVisible(true);
+                  }}
+                >
+                  <Image
+                    source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
+                    style={styles.fingerprint}
+                  />
+                  <Text style={styles.attendanceText}>Check In</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              {checkTime ? (
+                <TouchableOpacity
+                  style={[
+                    styles.fingerprintContainer,
+                    { opacity: attendanceEnabled ? 1 : 0.4 }
+                  ]}
+                  onPress={() => {
+                    if (!attendanceEnabled) {
+                      Alert.alert(
+                        'Alert',
+                        'Previous day attendance must be regularized before today’s check-in.',
+                        [{ text: 'OK' }]
+                      );
+                      return;
+                    }
+
+                    setModalVisible(true);
+                  }}
+                >
+                  <Image
+                    source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
+                    style={styles.fingerprint}
+                  />
+                  <Text style={styles.attendanceText}>Check Out</Text>
+                </TouchableOpacity>
+              ) : null}
 
               {/* Attendance Report Button */}
 
@@ -317,13 +579,123 @@ const CSRAttendanceManage = () => {
                     />
 
                   </View>
-                  <TouchableOpacity style={[styles.reportButton, { marginTop: 20 }]} onPress={markAttendance}>
+                  <TouchableOpacity style={[styles.reportButton, { marginTop: 20 }]}  onPress={() => markAttendance("0", "Own Mapped Counter")}>
                     <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
                   </TouchableOpacity>
 
 
 
 
+
+                </View>
+              </View>
+            </Modal>
+
+            <Modal
+              visible={forgotModalVisible}
+              transparent
+              animationType="fade"
+            >
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalContainer, { height: 260 }]}>
+
+
+
+                  <Text style={{ marginVertical: 10, color: '#444', fontSize: 16, fontWeight: '600' }}>
+                    Please enter the reason
+                  </Text>
+
+                  <TextInput
+                    style={{
+                      width: '90%',
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      borderRadius: 8,
+                      padding: 10,
+                      minHeight: 80,
+                      textAlignVertical: 'top',
+                    }}
+                    placeholder="Enter reason..."
+                    multiline
+                    value={forgotReason}
+                    onChangeText={setForgotReason}
+                  />
+
+                  <TouchableOpacity
+                    style={[styles.reportButton, { marginTop: 20, width: '90%' }]}
+                    onPress={() => {
+                      if (!forgotReason.trim()) {
+                        Alert.alert('Alert', 'Please enter reason');
+                        return;
+                      }
+
+                      console.log('Reason:', forgotReason);
+                      Alert.alert('Success', 'Request submitted');
+                      submitRegularise();
+                    }}
+                  >
+                    <Text style={styles.attenMarkText}>Submit</Text>
+                  </TouchableOpacity>
+
+                </View>
+              </View>
+            </Modal>
+
+
+            <Modal
+              visible={counterModalVisible}
+              transparent
+              animationType="fade"
+            >
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalContainer, { height: 320 }]}>
+
+                  <Text style={{ fontSize: 16, fontWeight: '600', marginTop: 20, color: "#a10a0a" }}>
+                    You are out of your designated counter area.
+                  </Text>
+
+                  <Text style={{ marginVertical: 10 }}>
+                    Please choose reason:
+                  </Text>
+
+                  {/* Option 1 */}
+                  <TouchableOpacity
+                    style={styles.optionButton}
+                    onPress={() => {
+                      setWorkStatusFlag("2");
+                      setWorkStatus("IFB Meet – Training");
+                      setCounterModalVisible(false);
+                      markAttendance("2", "IFB Meet – Training");
+                    }}
+                  >
+                    <Text style={styles.optionText}>IFB Meet – Training</Text>
+                  </TouchableOpacity>
+
+                  {/* Option 2 */}
+                  <TouchableOpacity
+                    style={styles.optionButton}
+                    onPress={() => {
+                      setWorkStatusFlag("3");
+                      setCounterModalVisible(false);
+                      setWorkStatus("Branch Office – Training");
+                     markAttendance("3", "Branch Office – Training");
+                    }}
+                  >
+                    <Text style={styles.optionText}>Branch Office – Training</Text>
+                  </TouchableOpacity>
+
+                  {/* Option 3 */}
+                  <TouchableOpacity
+                    style={styles.optionButton}
+                    onPress={() => {
+                      setWorkStatusFlag("4");
+                      setCounterModalVisible(false);
+                      setWorkStatus("IFB Exhibitions");
+                       markAttendance("4", "IFB Exhibitions");
+                    }}
+                  >
+                    <Text style={styles.optionText}>IFB Exhibitions</Text>
+                  </TouchableOpacity>
 
                 </View>
               </View>
@@ -342,7 +714,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   map: {
     width: '100%',
-    height: '100%',
+    height: '70%',
   },
   bottomContainer: {
     borderTopLeftRadius: 30,
@@ -355,7 +727,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '44%', // Adjust as needed
+    height: '50%', // Adjust as needed
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -524,6 +896,23 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     tintColor: '#FFFFFF'
+  },
+
+  optionButton: {
+    width: '90%',
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginTop: 10,
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+  },
+
+  optionText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000',
   },
 });
 

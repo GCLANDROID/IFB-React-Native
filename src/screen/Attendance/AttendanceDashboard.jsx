@@ -29,6 +29,7 @@ const AttendanceDashboard = () => {
     const [leaveURL, setLeaveURL] = useState('');
     const [leaveEncahURL, setLeaveEncahURL] = useState('');
 
+
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -51,29 +52,29 @@ const AttendanceDashboard = () => {
     }, []);
 
 
-const openInBrowser = async (url) => {
-  try {
-    if (!url || typeof url !== 'string') {
-      console.warn('Invalid URL:', url);
-      return;
-    }
+    const openInBrowser = async (url) => {
+        try {
+            if (!url || typeof url !== 'string') {
+                console.warn('Invalid URL:', url);
+                return;
+            }
 
-    // Convert to HTTPS
-    const secureUrl = url.replace(/^http:\/\//i, 'https://');
-    const encodedUrl = encodeURI(secureUrl);
+            // Convert to HTTPS
+            const secureUrl = url.replace(/^http:\/\//i, 'https://');
+            const encodedUrl = encodeURI(secureUrl);
 
-    console.log('Trying to open:', encodedUrl);
+            console.log('Trying to open:', encodedUrl);
 
-    const supported = await Linking.canOpenURL(encodedUrl);
-    if (supported) {
-      await Linking.openURL(encodedUrl);
-    } else {
-      console.warn("Can't handle URL:", encodedUrl);
-    }
-  } catch (error) {
-    console.error('Error opening link:', error);
-  }
-};
+            const supported = await Linking.canOpenURL(encodedUrl);
+            if (supported) {
+                await Linking.openURL(encodedUrl);
+            } else {
+                console.warn("Can't handle URL:", encodedUrl);
+            }
+        } catch (error) {
+            console.error('Error opening link:', error);
+        }
+    };
 
 
 
@@ -96,6 +97,8 @@ const openInBrowser = async (url) => {
                             <View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
                                 <Text style={styles.nameText}>Welcome {'\n'} {userName}</Text>
                             </View>
+
+                           
                             <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
                                 <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('AttendanceManage')}>
                                     <Image source={require('../../asset/attendance-punch.png')} style={styles.menuICon}></Image>
@@ -116,6 +119,7 @@ const openInBrowser = async (url) => {
                                     <Text style={styles.menuTextText}>Leave{'\n'}Application</Text>
                                 </TouchableOpacity>
                             </View>
+                            
                         </View>
                     </ScrollView>
 
@@ -190,8 +194,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginTop: 10,
-    }
-
+    },
+     
 
 
 

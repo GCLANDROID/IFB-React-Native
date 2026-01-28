@@ -35,6 +35,8 @@ const CSRDashbaord = () => {
     const [totalSales, setTotalSales] = useState('');
     const [deliveryPending, setDeliveryPending] = useState('');
     const [ticketGenerated, setTicketGenerated] = useState('');
+    const [shiftOverTime, setShiftOverTime] = useState('');
+    const [checkTime, setCheckTime] = useState('');
 
     useEffect(() => {
         const loadData = async () => {
@@ -63,8 +65,10 @@ const CSRDashbaord = () => {
         };
 
         loadData();
+        fetchTodayAttendance();
         fetchReport();
         fetchNotification();
+
     }, []);
 
     // Pie chart data
@@ -183,6 +187,82 @@ const CSRDashbaord = () => {
         }
     };
 
+    const fetchTodayAttendance = async () => {
+        try {
+            setLoading(true);
+            const loginID = await AsyncStorage.getItem('UserID');
+            const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+            const response = await axios.get(API.FETCH_LOGINTIME(
+                loginID,
+                securityCode
+
+            ));
+            console.log('TIME API response:', response);
+
+
+
+            if (response.data?.responseStatus === true) {
+                const data = Array.isArray(response.data.responseData)
+                    ? response.data.responseData[0]
+                    : response.data.responseData;
+
+                const checkInTime = data?.Time;
+
+                console.log('Check-in Time:', checkInTime); // debug
+
+                if (checkInTime) {
+                    setCheckTime(checkInTime);
+                    const overtime = calculateShiftOverTime(checkInTime);
+                    console.log('Shift Over Time:', overtime); // debug
+                    setShiftOverTime(overtime);
+                    await AsyncStorage.setItem('checkInTime', checkInTime);
+                    await AsyncStorage.setItem('overTime', overtime);
+                }else{
+                    await AsyncStorage.setItem('checkInTime', "");
+                    await AsyncStorage.setItem('overTime', "");
+                }
+            }
+
+
+        } catch (err) {
+            console.log('Attendance API error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const calculateShiftOverTime = (timeStr) => {
+        try {
+            if (!timeStr) return '';
+
+            // Supports "10:15" or "10:15:00"
+            const parts = timeStr.split(':');
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+
+            if (isNaN(hours) || isNaN(minutes)) return '';
+
+            const date = new Date();
+            date.setHours(hours);
+            date.setMinutes(minutes);
+            date.setSeconds(0);
+
+            // Add 9 hours shift
+            date.setHours(date.getHours() + 9);
+
+            // Format nicely (07:15 PM)
+            return date.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+            });
+        } catch (e) {
+            console.log('Time parse error:', e);
+            return '';
+        }
+    };
+
     return (
         <SafeAreaProvider>
             <SafeAreaView style={{ flex: 1, backgroundColor: '#FF003E' }}>
@@ -249,10 +329,23 @@ const CSRDashbaord = () => {
                                 </TouchableOpacity>
                             </View>
 
+                            <View style={[styles.attninformationrow, { backgroundColor: '#ee8626e0' }]}>
+                                <Text style={styles.attendanceTime}>Dear Team, Kindly ensure that sales are punched on the same day of sale. Any delay in punching might impact incentive eligibility. Happy Selling!</Text>
+
+                            </View>
+
                             <View style={styles.informationrow}>
                                 <Text style={styles.informationtitle}>{notificationTitle}</Text>
                                 <Text style={styles.informationvalue}>{notification}</Text>
                             </View>
+                            {checkTime ? (
+
+                            <View style={[styles.attninformationrow, { backgroundColor: '#cbff0fe0' }]}>
+                                <Text style={styles.attendanceTimeTitle}>Your stipulated shift duration is calculated as per the applicable working hours policy. Please ensure adherence to the defined shift timings in line with organisational guidelines</Text>
+                                <Text style={styles.attendanceTime}>Check In time: {checkTime} | Shiftover Time: {shiftOverTime}</Text>
+
+                            </View>
+                            ) : null}
 
                             {/* Bottom Buttons */}
                             <View style={styles.bottomRow}>
@@ -404,7 +497,27 @@ const styles = StyleSheet.create({
     gifimage: {
         width: 100,
         height: 100,
-    }
+    },
+    attendanceTimeTitle: {
+        fontSize: 12,
+        color: '#000000',
+        fontWeight: '400',
+        textAlign: 'center',
+    },
+    attendanceTime: {
+        fontSize: 14,
+        color: '#0e0101',
+        fontWeight: '600',
+        textAlign: 'center',
+        marginTop: 5
+    },
+    attninformationrow: {
+
+        alignItems: 'center',
+        paddingVertical: 10,
+        marginVertical: 5
+
+    },
 });
 
 export default CSRDashbaord;
