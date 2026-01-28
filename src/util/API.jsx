@@ -111,7 +111,8 @@ const API = {
       LoginID
     )}&LoginDate=${encodeURIComponent(LoginDate)}&Remarks=${encodeURIComponent(Remarks)}&Operation=${encodeURIComponent(Operation)}&SecurityCode=${encodeURIComponent(securityCode)}`,
 
-
+  EMPLOYEE_CHECKOUT_SALES: (code, sales, op, sec) =>
+  `${BASE_URL}/EmployeeCheckOutDailySales?Code=${code}&SalesCount=${sales}&Operation=${op}&SecurityCode=${sec}`
 };
 
 // Add more endpoints here as needed

@@ -34,6 +34,11 @@ const CSRAttendanceManage = () => {
   const [counterModalVisible, setCounterModalVisible] = useState(false);
   const [workStatusFlag, setWorkStatusFlag] = useState('');
   const [workStatus, setWorkStatus] = useState('Own Mapped Counter');
+  const [minOutHrs, setMinOutHrs] = useState('');
+  const [minOutMin, setMinOutMin] = useState('');
+  const [salesModalVisible, setSalesModalVisible] = useState(false);
+  const [countModalVisible, setCountModalVisible] = useState(false);
+  const [salesCount, setSalesCount] = useState(0);
 
   const requestCameraPermission = async () => {
     if (Platform.OS === 'android') {
@@ -151,9 +156,38 @@ const CSRAttendanceManage = () => {
     };
     fetchTodayAttendance();
     checkLoginStatus();
+    loadMinCheckoutTime();
 
     getLocation();
+
+
   }, []);
+
+
+  const loadMinCheckoutTime = async () => {
+    try {
+      const hrs = await AsyncStorage.getItem('MINCheckouthrs');
+      const min = await AsyncStorage.getItem('MINCheckoutmin');
+
+      console.log('Min checkout from storage:', hrs, min);
+
+      setMinOutHrs(hrs || '0');
+      setMinOutMin(min || '0');
+    } catch (e) {
+      console.log('AsyncStorage read error:', e);
+    }
+  };
+
+  const isCheckoutAllowed = () => {
+    const h = parseInt(minOutHrs || '0', 10);
+    const m = parseInt(minOutMin || '0', 10);
+
+    const now = new Date();
+    const current = now.getHours() * 60 + now.getMinutes();
+    const allowed = h * 60 + m;
+
+    return current >= allowed;
+  };
 
 
   const checkLoginStatus = async () => {
@@ -439,6 +473,98 @@ const CSRAttendanceManage = () => {
     }
   };
 
+  const handleCheckoutPress = async () => {
+    try {
+      setLoading(true);
+
+      const code = await AsyncStorage.getItem('MasterID'); // or Code if different key
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+      const response = await axios.get(
+        API.EMPLOYEE_CHECKOUT_SALES(
+          code,
+          0,
+          1,
+          securityCode
+        )
+      );
+
+      console.log('Checkout Sales API:', response.data);
+
+      const obj = Array.isArray(response.data?.responseData)
+        ? response.data.responseData[0]
+        : null;
+
+      const errorCode = obj?.ErrorCode;
+
+      console.log('ErrorCode:', errorCode);
+
+      if (errorCode === "0") {
+        // ✅ Open Yes/No modal
+        setSalesModalVisible(true);
+      } else {
+        // ✅ Continue normal flow
+        setModalVisible(true);
+      }
+
+    } catch (err) {
+      console.error('Checkout API error:', err);
+      Alert.alert('Error', 'Unable to process checkout');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitSalesCount = async (countOverride) => {
+    const finalCount = countOverride ?? salesCount;
+
+    if (finalCount === undefined || finalCount === null) {
+      Alert.alert('Alert', 'Please select number of products');
+      return;
+    }
+
+
+    try {
+      setLoading(true);
+
+      const code = await AsyncStorage.getItem('MasterID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+      const response = await axios.get(
+        API.EMPLOYEE_CHECKOUT_SALES(
+          code,
+          finalCount,
+          2,               // Operation = 2
+          securityCode
+        )
+      );
+
+      console.log('Sales submit response:', response.data);
+
+      const obj = Array.isArray(response.data?.responseData)
+        ? response.data.responseData[0]
+        : null;
+
+      const errorCode = obj?.ErrorCode;
+
+      if (String(errorCode) === '1') {
+        Alert.alert('Alert', 'Data not saved');
+        return;
+      }
+
+      // ✅ Success → continue normal checkout flow
+      setSalesModalVisible(false);
+      setCountModalVisible(false);
+      handleCheckoutPress();
+
+    } catch (err) {
+      console.error('Submit sales error:', err);
+      Alert.alert('Error', 'Unable to submit sales');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
 
 
@@ -517,23 +643,26 @@ const CSRAttendanceManage = () => {
                 <TouchableOpacity
                   style={[
                     styles.fingerprintContainer,
-                    { opacity: attendanceEnabled ? 1 : 0.4 }
+                    { opacity: attendanceEnabled && isCheckoutAllowed() ? 1 : 0.4 }
                   ]}
                   onPress={() => {
-                    if (!attendanceEnabled) {
+
+
+                    if (!isCheckoutAllowed()) {
+                      const formatted = `${String(minOutHrs).padStart(2, '0')}:${String(minOutMin).padStart(2, '0')}`;
                       Alert.alert(
                         'Alert',
-                        'Previous day attendance must be regularized before today’s check-in.',
+                        `Check-out is allowed from ${formatted}`,
                         [{ text: 'OK' }]
                       );
                       return;
                     }
 
-                    setModalVisible(true);
+                    handleCheckoutPress();
                   }}
                 >
                   <Image
-                    source={require('../../asset/fingerprint-scanner.gif')} // Replace with your fingerprint icon
+                    source={require('../../asset/fingerprint-scanner.gif')}
                     style={styles.fingerprint}
                   />
                   <Text style={styles.attendanceText}>Check Out</Text>
@@ -579,7 +708,7 @@ const CSRAttendanceManage = () => {
                     />
 
                   </View>
-                  <TouchableOpacity style={[styles.reportButton, { marginTop: 20 }]}  onPress={() => markAttendance("0", "Own Mapped Counter")}>
+                  <TouchableOpacity style={[styles.reportButton, { marginTop: 20 }]} onPress={() => markAttendance("0", "Own Mapped Counter")}>
                     <Text style={styles.attenMarkText}>Mark Your Attendance</Text>
                   </TouchableOpacity>
 
@@ -678,7 +807,7 @@ const CSRAttendanceManage = () => {
                       setWorkStatusFlag("3");
                       setCounterModalVisible(false);
                       setWorkStatus("Branch Office – Training");
-                     markAttendance("3", "Branch Office – Training");
+                      markAttendance("3", "Branch Office – Training");
                     }}
                   >
                     <Text style={styles.optionText}>Branch Office – Training</Text>
@@ -691,10 +820,116 @@ const CSRAttendanceManage = () => {
                       setWorkStatusFlag("4");
                       setCounterModalVisible(false);
                       setWorkStatus("IFB Exhibitions");
-                       markAttendance("4", "IFB Exhibitions");
+                      markAttendance("4", "IFB Exhibitions");
                     }}
                   >
                     <Text style={styles.optionText}>IFB Exhibitions</Text>
+                  </TouchableOpacity>
+
+                </View>
+              </View>
+            </Modal>
+
+
+            <Modal
+              visible={salesModalVisible}
+              transparent
+              animationType="fade"
+            >
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalContainer, { height: 230 }]}>
+
+                  <Text style={{ fontSize: 16, fontWeight: '600', marginVertical: 20 }}>
+                    Have you sold any IFB product today?
+                  </Text>
+
+                  <TouchableOpacity
+                    style={[styles.reportButton, { width: '90%', backgroundColor: '#c7a615' }]}
+                    onPress={() => {
+                      setSalesModalVisible(false);
+                      setCountModalVisible(true);
+
+                    }}
+                  >
+                    <Text style={styles.attenMarkText}>Yes</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.reportButton,
+                      { width: '90%', backgroundColor: '#6ba105' }
+                    ]}
+                    onPress={() => {
+                       submitSalesCount(0);
+
+                    }}
+                  >
+                    <Text style={styles.attenMarkText}>No</Text>
+                  </TouchableOpacity>
+
+                </View>
+              </View>
+            </Modal>
+
+            <Modal
+              visible={countModalVisible}
+              transparent
+              animationType="fade"
+            >
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalContainer, { height: 350 }]}>
+
+                  <Text style={{ fontSize: 16, fontWeight: '600', marginVertical: 15 }}>
+                    Select the number of products sold
+                  </Text>
+
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {Array.from({ length: 10 }).map((_, i) => {
+                      const num = i + 1;
+                      return (
+                        <TouchableOpacity
+                          key={num}
+                          style={{
+                            width: 60,
+                            height: 60,
+                            borderRadius: 30,
+                            borderWidth: 1,
+                            borderColor: salesCount === num ? '#FF3B30' : '#ccc',
+                            backgroundColor: salesCount === num ? '#FF3B30' : '#fff',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            margin: 8,
+                          }}
+                          onPress={() => setSalesCount(num)}
+                        >
+                          <Text
+                            style={{
+                              color: salesCount === num ? '#fff' : '#000',
+                              fontWeight: '600',
+                            }}
+                          >
+                            {num}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.reportButton, { width: '90%', marginTop: 20 }]}
+                    onPress={() => {
+                      if (!salesCount) {
+                        Alert.alert('Alert', 'Please select number of products');
+                        return;
+                      }
+
+                      console.log('Selected Sales Count:', salesCount);
+
+                      
+                      submitSalesCount(); // continue to selfie / attendance flow
+                    }}
+                  >
+                    <Text style={styles.attenMarkText}>Continue</Text>
                   </TouchableOpacity>
 
                 </View>
