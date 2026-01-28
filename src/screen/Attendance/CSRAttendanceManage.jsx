@@ -39,6 +39,7 @@ const CSRAttendanceManage = () => {
   const [salesModalVisible, setSalesModalVisible] = useState(false);
   const [countModalVisible, setCountModalVisible] = useState(false);
   const [salesCount, setSalesCount] = useState(0);
+  const [showStartBreak, setShowStartBreak] = useState(true);
 
   const requestCameraPermission = async () => {
     if (Platform.OS === 'android') {
@@ -155,8 +156,10 @@ const CSRAttendanceManage = () => {
       }
     };
     fetchTodayAttendance();
+    checkBreakStatus();
     checkLoginStatus();
     loadMinCheckoutTime();
+
 
     getLocation();
 
@@ -564,7 +567,80 @@ const CSRAttendanceManage = () => {
       setLoading(false);
     }
   };
+  const handleStartBreak = async () => {
+    if (!location) {
+      Alert.alert('Error', 'Location not available');
+      return;
+    }
 
+    try {
+      setLoading(true);
+
+      const empId = await AsyncStorage.getItem('UserID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+      const response = await axios.get(
+        API.EMPLOYEE_BREAK_IN_OUT(
+          empId,
+          location.latitude,
+          location.longitude,
+          1, // Operation = 1 for Start Break
+          securityCode
+        )
+      );
+
+      console.log('Start Break Response:', response.data);
+
+      if (response.data?.responseStatus === true) {
+        Alert.alert('Success', response.data.responseText || 'Break started successfully');
+        await checkBreakStatus();
+      } else {
+        Alert.alert('Failed', response.data?.responseText || 'Unable to start break');
+      }
+
+    } catch (error) {
+      console.error('Start Break error:', error);
+      Alert.alert('Error', 'Something went wrong while starting break');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkBreakStatus = async () => {
+    try {
+      const empId = await AsyncStorage.getItem('UserID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+      const response = await axios.get(
+        API.EMPLOYEE_BREAK_IN_OUT(
+          empId,
+          location.latitude,
+          location.longitude,
+          2, // Operation = 2 = check status
+          securityCode
+        )
+      );
+
+      console.log('Break Status Response:', response.data);
+
+      const obj = Array.isArray(response.data?.responseData)
+        ? response.data.responseData[0]
+        : null;
+
+      const returnVal = obj?.ReturnVal;
+
+      if (String(returnVal) === "1") {
+        // 1 = not on break → show Start Break
+        setShowStartBreak(true);
+      } else {
+        // otherwise → on break → show End Break
+        setShowStartBreak(false);
+      }
+
+    } catch (err) {
+      console.error('Check break status error:', err);
+    }
+  };
 
 
 
@@ -668,6 +744,22 @@ const CSRAttendanceManage = () => {
                   <Text style={styles.attendanceText}>Check Out</Text>
                 </TouchableOpacity>
               ) : null}
+
+              {showStartBreak ? (
+                <TouchableOpacity
+                  style={[styles.reportButton, { marginTop: 10, backgroundColor: '#000' }]}
+                  onPress={handleStartBreak}
+                >
+                  <Text style={styles.reportText}>Start Break</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.reportButton, { marginTop: 10, backgroundColor: '#000' }]}
+                 onPress={handleStartBreak}  // optional if you have separate handler
+                >
+                  <Text style={styles.reportText}>End Break</Text>
+                </TouchableOpacity>
+              )}
 
               {/* Attendance Report Button */}
 
@@ -860,7 +952,7 @@ const CSRAttendanceManage = () => {
                       { width: '90%', backgroundColor: '#6ba105' }
                     ]}
                     onPress={() => {
-                       submitSalesCount(0);
+                      submitSalesCount(0);
 
                     }}
                   >
@@ -925,7 +1017,7 @@ const CSRAttendanceManage = () => {
 
                       console.log('Selected Sales Count:', salesCount);
 
-                      
+
                       submitSalesCount(); // continue to selfie / attendance flow
                     }}
                   >
