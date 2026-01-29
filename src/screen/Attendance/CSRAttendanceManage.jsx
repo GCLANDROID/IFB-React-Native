@@ -432,6 +432,7 @@ const CSRAttendanceManage = () => {
         if (msg.toLowerCase().includes('counter area')) {
           // ✅ Open special modal
           setCounterModalVisible(true);
+          setModalVisible(false);
         } else {
           Alert.alert("❌ Failed", msg || "Failed to mark attendance.");
         }
