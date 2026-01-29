@@ -92,12 +92,12 @@ const LoginScreen = () => {
         }
 
         try {
-              const android_id = await DeviceInfo.getUniqueId();;
-              const refreshedToken = await DeviceInfo.getUniqueId();; // Replace with actual token retrieval logic
+            const android_id = await DeviceInfo.getUniqueId();;
+            const refreshedToken = await DeviceInfo.getUniqueId();; // Replace with actual token retrieval logic
             const deviceID = await DeviceInfo.getUniqueId();; // Replace with actual device ID retrieval logic
             const version = Platform.OS;
-           // const android_id = "e45ebb02c6800641";
-            //const refreshedToken = "e45ebb02c6800641";
+             //const android_id = "e45ebb02c6800641";
+           // const refreshedToken = "e45ebb02c6800641";
 
 
             const base64Password = Buffer.from(password, 'utf-8').toString('base64');
@@ -316,7 +316,10 @@ const LoginScreen = () => {
                             <Text style={styles.label}>Choose Reason for Change :</Text>
                             <TouchableOpacity
                                 style={styles.dropdown}
-                                onPress={() => setShowReasonModal(true)}
+                                onPress={() => {
+                                    setShowDeviceModal(false);  // close device modal
+                                    setShowReasonModal(true);   // open reason modal
+                                }}
                             >
                                 <Text style={{ color: selectedReason ? '#000' : '#999' }}>
                                     {selectedReason || 'Please Select'}
@@ -355,6 +358,7 @@ const LoginScreen = () => {
                                     setSelectedReason('My mobile phone was lost');
                                     setRemarks('My mobile phone was lost');
                                     setShowReasonModal(false);
+                                    setShowDeviceModal(true);
                                 }}
                             >
                                 <Text>My mobile phone was lost</Text>
@@ -366,6 +370,7 @@ const LoginScreen = () => {
                                     setSelectedReason('I have changed my mobile phone');
                                     setRemarks('I have changed my mobile phone');
                                     setShowReasonModal(false);
+                                     setShowDeviceModal(true);
                                 }}
                             >
                                 <Text>I have changed my mobile phone</Text>
@@ -377,6 +382,7 @@ const LoginScreen = () => {
                                     setSelectedReason('Others');
                                     setShowReasonModal(false);
                                     setRemarks('Others');
+                                     setShowDeviceModal(true);
                                 }}
                             >
                                 <Text>Others</Text>

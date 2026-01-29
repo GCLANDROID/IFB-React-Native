@@ -232,7 +232,7 @@ const CSRAttendanceManage = () => {
             'Alert',
             'You have repeatedly not marked check out and exceeded missed check-out regularisation limits.',
             [
-              { text: 'I accept and Continue', onPress: () => setAttendanceEnabled(true) }
+              { text: 'I accept and Continue', onPress: () => submitAbsent() }
             ]
           );
         }
@@ -269,6 +269,48 @@ const CSRAttendanceManage = () => {
         lastWorkingDate,
         forgotReason,
         1,
+        securityCode
+
+      ));
+
+      console.log('Regularise Response:', response.data);
+
+      if (response.data?.responseStatus === true) {
+        Alert.alert('Success', response.data.responseText || 'Request submitted');
+
+        setForgotModalVisible(false);
+        setForgotReason('');
+
+        // ✅ Call again after success
+        checkLoginStatus();
+      } else {
+        Alert.alert('Failed', response.data?.responseText || 'Request failed');
+      }
+
+    } catch (error) {
+      console.error('Regularise error:', error);
+      Alert.alert('Error', 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+   const submitAbsent = async () => {
+    
+    try {
+      setLoading(true);
+
+      const loginID = await AsyncStorage.getItem('UserID');
+      const securityCode = await AsyncStorage.getItem('SecurityCode');
+
+
+
+      const response = await axios.get(API.POST_REGULARIZE(
+        loginID,
+        lastWorkingDate,
+        "I accept and continue",
+        2,
         securityCode
 
       ));
