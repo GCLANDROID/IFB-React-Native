@@ -153,7 +153,7 @@ const CSRAttendanceDashboard = () => {
 
                         <View style={{ flex: 1, justifyContent: 'center', padding: 20, alignContent: 'center', marginTop: 60 }}>
                             <View style={{ justifyContent: 'space-between', flexDirection: 'row', marginBottom: 20, alignContent: 'center' }}>
-                                <TouchableOpacity >
+                                <TouchableOpacity onPress={() => navigation.goBack()}>
                                     <Image source={require('../../asset/back-icon.png')} style={styles.headerIcon} />
                                 </TouchableOpacity>
                                 <Text style={styles.nameText}>Attendance Mangement</Text>

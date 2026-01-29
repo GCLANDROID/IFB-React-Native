@@ -264,15 +264,12 @@ const DeliveryupdateManage = () => {
 
     const handlePincodeChange = async (text) => {
 
-        if (text.length === 6) {
+         if (text.length === 6) {
             setLoading(true);
             try {
-                const res = await fetch(`https://crmapi.ifbsupport.com/api/wa/find-area?PinCode=${text}`, {
+                const res = await fetch(`https://cloud.geniusconsultant.com/GeniusPinCodeApi/api/PinCode?id=${text}`, {
                     method: "GET",
-                    headers: {
-                        "Authorization": "Bearer V0hBVFNBUFA6d2FVU0VS",
-                        "Cookie": "TS013f4d0e=0175b9c4a690ee000d09f27c739e8ddc6598c7da8e3b96ffc2c170e8d24c349a15cf26ed8188e9728e693bc57722ad375fc741c358"
-                    }
+                    
                 });
 
                 const json = await res.json();
@@ -281,15 +278,15 @@ const DeliveryupdateManage = () => {
                 setLoading(false);
 
                 if (json && json.length > 0) {
-                    const { State, City, Area } = json[0];
+                    const { STATENAME, REGIONNAME, OFFICENAME } = json[0];
 
-                    setSelectedArea(Area);
+                    setSelectedArea(OFFICENAME);
 
-                    setAreas(json.map(item => item.Area));
+                    setAreas(json.map(item => item.OFFICENAME));
 
                     // ✅ match with CommonDDL states
-                    matchState(State);
-                    setSelectedCity(City);
+                    matchState(STATENAME);
+                    setSelectedCity(REGIONNAME);
                 }
             } catch (err) {
                 setLoading(false);
