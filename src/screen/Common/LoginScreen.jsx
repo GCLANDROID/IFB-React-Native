@@ -92,12 +92,12 @@ const LoginScreen = () => {
         }
 
         try {
-            //  const android_id = await DeviceInfo.getUniqueId();;
-            //  const refreshedToken = await DeviceInfo.getUniqueId();; // Replace with actual token retrieval logic
+              const android_id = await DeviceInfo.getUniqueId();;
+              const refreshedToken = await DeviceInfo.getUniqueId();; // Replace with actual token retrieval logic
             const deviceID = await DeviceInfo.getUniqueId();; // Replace with actual device ID retrieval logic
             const version = Platform.OS;
-            const android_id = "e45ebb02c6800641";
-            const refreshedToken = "e45ebb02c6800641";
+           // const android_id = "e45ebb02c6800641";
+            //const refreshedToken = "e45ebb02c6800641";
 
 
             const base64Password = Buffer.from(password, 'utf-8').toString('base64');
