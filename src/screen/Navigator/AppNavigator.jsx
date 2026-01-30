@@ -20,6 +20,7 @@ import CSRAttendanceManage from '../Attendance/CSRAttendanceManage';
 import DeliveryupdateManage from '../CSRSalesManagement/DeliveryupdateManage';
 import SalesReportDashboard from '../CSRSalesManagement/SalesReportDashboard';
 import SalesReportDetails from '../CSRSalesManagement/SalesReportDetails';
+import IFBPlanoScreen from '../Planogram/IFBPlanoScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -46,6 +47,7 @@ const AppNavigator = () => {
         <Stack.Screen name="DeliveryupdateManage" component={DeliveryupdateManage} />
         <Stack.Screen name="SalesReportDashboard" component={SalesReportDashboard} />
         <Stack.Screen name="SalesReportDetails" component={SalesReportDetails} />
+        <Stack.Screen name="IFBPlanoScreen" component={IFBPlanoScreen} />
       </Stack.Navigator>
 
     </SafeAreaProvider>

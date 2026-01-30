@@ -364,7 +364,7 @@ const CSRDashbaord = () => {
                             </View>
 
                             <View style={styles.bottomRow}>
-                                <TouchableOpacity style={styles.bottomBtn}>
+                                <TouchableOpacity style={styles.bottomBtn}  onPress={() => navigation.navigate('IFBPlanoScreen')}>
                                     <Image source={require('../../asset/qr-code.gif')} style={styles.gifimage} />
                                     <Text style={styles.bottomText}>Planogram Hygiene</Text>
                                 </TouchableOpacity>

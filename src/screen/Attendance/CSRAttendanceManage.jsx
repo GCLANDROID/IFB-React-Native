@@ -156,12 +156,13 @@ const CSRAttendanceManage = () => {
       }
     };
     fetchTodayAttendance();
-    checkBreakStatus();
+    
     checkLoginStatus();
     loadMinCheckoutTime();
 
 
     getLocation();
+    checkBreakStatus();
 
 
   }, []);
@@ -657,8 +658,8 @@ const CSRAttendanceManage = () => {
       const response = await axios.get(
         API.EMPLOYEE_BREAK_IN_OUT(
           empId,
-          location.latitude,
-          location.longitude,
+          "0.0", // Dummy lat
+          "0.0",
           2, // Operation = 2 = check status
           securityCode
         )
@@ -672,12 +673,12 @@ const CSRAttendanceManage = () => {
 
       const returnVal = obj?.ReturnVal;
 
-      if (String(returnVal) === "1") {
+      if (returnVal === "1") {
         // 1 = not on break → show Start Break
         setShowStartBreak(true);
       } else {
         // otherwise → on break → show End Break
-        setShowStartBreak(false);
+        setShowStartBreak(true);
       }
 
     } catch (err) {
@@ -793,14 +794,14 @@ const CSRAttendanceManage = () => {
                   style={[styles.reportButton, { marginTop: 10, backgroundColor: '#000' }]}
                   onPress={handleStartBreak}
                 >
-                  <Text style={styles.reportText}>Start Break</Text>
+                  <Text style={styles.reportText}>Break</Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   style={[styles.reportButton, { marginTop: 10, backgroundColor: '#000' }]}
                  onPress={handleStartBreak}  // optional if you have separate handler
                 >
-                  <Text style={styles.reportText}>End Break</Text>
+                  <Text style={styles.reportText}>Break</Text>
                 </TouchableOpacity>
               )}
 
